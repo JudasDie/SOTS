@@ -1,6 +1,6 @@
-# TracKit
+# SOTS
 
-### This repo provides training and testing codes of recent single object tracking and segmentation (VOT and VOTS).
+### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS).
 
 ## News
 :boom: **Repo Init:** Official implementation of [OceanPlus]() is uploaded. [OceanPlus](), [Ocean]() and [SiamDW]() are supported now. 
@@ -42,7 +42,7 @@ Official implementation of the OceanPlus tracker. It proposes an attention retri
 
 
 </div>
-<img src="https://github.com/JudasDie/SOTS/blob/master/demo/oceanplus_overview.jpg"  alt="OceanPlus"/><br/>
+<img src="https://github.com/JudasDie/SOTS/blob/master/demo/oceanplu_overview.png"  alt="OceanPlus"/><br/>
 </div>
 
 ### Ocean [ECCV2020]
@@ -65,17 +65,6 @@ Other trackers, coming soon ...
 
 
 :cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud:
-
-
-
-:boom: We achieves the runner-ups for both [VOT2020ST (short-term) and RT(real-time)](http://data.votchallenge.net/vot2020/presentations/vot2020-st.pdf). The variants of Ocean take **2nd/3rd/5th** places of VOT2020RT. The [SiamDW-T](https://github.com/researchmm/VOT2019) submitted to VOT2019 achieves **1st** of [VOT2020RGBT](http://data.votchallenge.net/vot2020/presentations/vot2020-rgbt.pdf) (submitted by VOT committee).  
-
-:boom: Our paper [Ocean](https://arxiv.org/pdf/2006.10721v2.pdf) has been accepted by [ECCV2020](https://www.ecva.net/papers/eccv_2020/papers_ECCV/html/3872_ECCV_2020_paper.php). 
-
-:boom:  The initial version is released, including [Ocean(ECCV2020)](https://arxiv.org/pdf/2006.10721v2.pdf) and [SiamDW(CVPR2019)](http://openaccess.thecvf.com/content_CVPR_2019/papers/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.pdf).
-
-:boom: We provide a TensorRT implementation, running at 1.5~2.5 times faster than pytorch version (e.g. 149fps/68fps for video `twinnings`, see [details](https://github.com/researchmm/TracKit/tree/master/lib/tutorial/)).
-
 
 
 ## Structure
@@ -104,8 +93,6 @@ $TrackSeg
 |—— ...
 
 ```
-
-
 
 ## References
 ```

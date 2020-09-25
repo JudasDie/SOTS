@@ -54,7 +54,7 @@ Ocean proposes a general anchor-free based tracking framework. It includes a pix
   <!-- <p>Example SiamFC, SiamRPN and SiamMask outputs.</p> -->
 </div>
 
-### SiamDW
+### SiamDW [CVPR2019]
 **[[Paper]](http://openaccess.thecvf.com/content_CVPR_2019/papers/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.pdf) [[Raw Results]](https://github.com/researchmm/SiamDW) [[Training and Testing]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/SiamDW/siamdw.md) [[Demo]]()** <br/>
 SiamDW is one of the pioneering work using deep backbone networks for Siamese tracking framework. Based on sufficient analysis on network depth, output size, receptive field and padding mode, we propose guidelines to build backbone networks for Siamese tracker. Several deeper and wider networks are built following the guidelines with the proposed CIR module. 
 

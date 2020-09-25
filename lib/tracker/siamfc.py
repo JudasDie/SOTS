@@ -33,7 +33,7 @@ class SiamFC(object):
             p.update(hp)
             p.renew()
 
-        print('======= hyper-parameters: scale_step: {}, scale_penalty: {}, scale_lr: {}  ======='.format(p.scale_step, p.scale_penalty, p.scale_lr))
+        # print('======= hyper-parameters: scale_step: {}, scale_penalty: {}, scale_lr: {}  ======='.format(p.scale_step, p.scale_penalty, p.scale_lr))
         net = model
 
         avg_chans = np.mean(im, axis=(0, 1))

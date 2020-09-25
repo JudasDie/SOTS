@@ -152,14 +152,31 @@ def track_tune(tracker, net, video, config):
     if not os.path.exists(tracker_path):
         os.makedirs(tracker_path)
 
-    result_path = join(tracker_path, '{:s}.txt'.format(video['name']))
-
-    # occ for parallel running
-    if not os.path.exists(result_path):
-        fin = open(result_path, 'w')
-        fin.close()
+    if 'VOT' in benchmark_name:
+        baseline_path = join(tracker_path, 'baseline')
+        video_path = join(baseline_path, video['name'])
+        if not os.path.exists(video_path):
+            os.makedirs(video_path)
+        result_path = join(video_path, video['name'] + '_001.txt')
+    elif 'GOT10K' in benchmark_name:
+        re_video_path = os.path.join(tracker_path, video['name'])
+        if not exists(re_video_path): os.makedirs(re_video_path)
+        result_path = os.path.join(re_video_path, '{:s}.txt'.format(video['name']))
     else:
-        return tracker_path
+        result_path = join(tracker_path, '{:s}.txt'.format(video['name']))
+
+        # occ for parallel running
+        if not os.path.exists(result_path):
+            fin = open(result_path, 'w')
+            fin.close()
+        else:
+            if benchmark_name.startswith('OTB'):
+                return tracker_path
+            elif benchmark_name.startswith('VOT') or benchmark_name.startswith('GOT10K'):
+                return 0
+            else:
+                print('benchmark not supported now')
+                return
 
     start_frame, lost_times, toc = 0, 0, 0
 
@@ -189,19 +206,32 @@ def track_tune(tracker, net, video, config):
         else:  # skip
             regions.append([float(0)])
 
-    if benchmark_name.startswith('VOT'):
-        return regions
-    elif benchmark_name.startswith('OTB'):
-        with open(result_path, "w") as fin:
-            for x in regions:
-                p_bbox = x.copy()
-                fin.write(
-                    ','.join(
-                        [str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        # save results for OTB
+        if 'OTB' in benchmark_name or 'LASOT' in benchmark_name:
+            with open(result_path, "w") as fin:
+                for x in regions:
+                    p_bbox = x.copy()
+                    fin.write(
+                        ','.join(
+                            [str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        elif 'VISDRONE' in benchmark_name or 'GOT10K' in benchmark_name:
+            with open(result_path, "w") as fin:
+                for x in regions:
+                    p_bbox = x.copy()
+                    fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        elif 'VOT' in benchmark_name:
+            with open(result_path, "w") as fin:
+                for x in regions:
+                    if isinstance(x, int):
+                        fin.write("{:d}\n".format(x))
+                    else:
+                        p_bbox = x.copy()
+                        fin.write(','.join([str(i) for i in p_bbox]) + '\n')
 
-        return tracker_path
-    else:
-        raise ValueError('not supported')
+        if 'OTB' in benchmark_name or 'VIS' in benchmark_name or 'VOT' in benchmark_name or 'GOT10K' in benchmark_name:
+            return tracker_path
+        else:
+            print('benchmark not supported now')
 
 
 def auc_otb_fc(tracker, net, config):

@@ -14,3 +14,13 @@ TEST:
     scale_lr: 0.2061
     scale_penalty: 0.9994
     w_influence: 0.3242
+  VOT2018: # 0.283 under SOTS env
+    scale_step: 1.0393
+    scale_lr: 0.5636
+    scale_penalty: 0.9517
+    w_influence: 0.2097
+  VOT2019: # 0.237 under SOTS env
+    scale_step: 1.0535
+    scale_lr: 0.2915
+    scale_penalty: 0.9615
+    w_influence: 0.2130

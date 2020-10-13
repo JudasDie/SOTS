@@ -114,6 +114,7 @@ def track(siam_tracker, online_tracker, siam_net, video, args):
     image_files, gt = video['image_files'], video['gt']
 
     for f, image_file in enumerate(image_files):
+
         im = cv2.imread(image_file)
         rgb_im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         if len(im.shape) == 2: im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)   # align with training
@@ -164,7 +165,7 @@ def track(siam_tracker, online_tracker, siam_net, video, args):
                 p_bbox = x.copy()
                 fin.write(
                     ','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
-        elif 'VISDRONE' in args.dataset or 'GOT10K' in args.dataset:
+        elif 'VISDRONE' in args.dataset or 'GOT10K' in args.dataset or 'TN' in args.dataset:
             for x in regions:
                 p_bbox = x.copy()
                 fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
@@ -223,7 +224,7 @@ def main():
         online_tracker = None
 
     print('====> warm up <====')
-    for i in tqdm(range(100)):
+    for i in tqdm(range(10)):
         siam_net.template(torch.rand(1, 3, 127, 127).cuda())
         siam_net.track(torch.rand(1, 3, 255, 255).cuda())
 

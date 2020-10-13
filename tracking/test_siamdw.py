@@ -99,11 +99,15 @@ def track(tracker, net, video, args):
                 else:
                     p_bbox = x.copy()
                     fin.write(','.join([str(i) for i in p_bbox]) + '\n')
-        else:
+        elif 'OTB' in args.dataset or 'LASOT' in args.dataset:
             for x in regions:
                 p_bbox = x.copy()
                 fin.write(
                     ','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        elif 'VISDRONE' in args.dataset or 'GOT10K' in args.dataset or 'TN' in args.dataset:
+            for x in regions:
+                p_bbox = x.copy()
+                fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
 
     toc /= cv2.getTickFrequency()
     print('Video: {:12s} Time: {:2.1f}s Speed: {:3.1f}fps'.format(video['name'], toc, f / toc))

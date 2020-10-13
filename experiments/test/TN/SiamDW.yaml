@@ -1,0 +1,6 @@
+TEST:
+  TN:
+    scale_step: 1.1897
+    scale_lr: 0.2226
+    scale_penalty: 0.9370
+    w_influence: 0.2897

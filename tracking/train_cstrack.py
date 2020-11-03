@@ -92,7 +92,10 @@ def train(hyp, opt, device, tb_writer=None):
         ckpt = torch.load(weights, map_location=device)  # load checkpoint
         model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc).to(device)  # create
         exclude = ['anchor'] if opt.cfg else []  # exclude keys
-        state_dict = ckpt['model'].float().state_dict()  # to FP32
+        if type(ckpt['model']).__name__ == "OrderedDict":
+            state_dict = ckpt['model']
+        else:
+            state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)  # intersect
         model.load_state_dict(state_dict, strict=False)  # load
         logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))  # report
@@ -431,7 +434,7 @@ def train(hyp, opt, device, tb_writer=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     #parser.add_argument('--weights', type=str, default='weights/yolov5l.pt', help='initial weights path')
-    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--weights', type=str, default='../weights/yolov5l.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='../experiments/model_set/CSTrack.yaml', help='model.yaml path')
     parser.add_argument('--data', type=str, default='../lib/dataset/mot/cfg/data_ch.json', help='data.json path')
 

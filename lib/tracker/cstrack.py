@@ -178,7 +178,10 @@ class JDETracker(object):
         ckpt = torch.load(opt.weights, map_location=opt.device)  # load checkpoint
         self.model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=1).to(opt.device)  # create
         exclude = ['anchor'] if opt.cfg else []  # exclude keys
-        state_dict = ckpt['model'].float().state_dict()  # to FP32
+        if type(ckpt['model']).__name__ == "OrderedDict":
+            state_dict = ckpt['model']
+        else:
+            state_dict = ckpt['model'].float().state_dict()  # to FP32
         state_dict = intersect_dicts(state_dict, self.model.state_dict(), exclude=exclude)  # intersect
         self.model.load_state_dict(state_dict, strict=False)  # load
         self.model.cuda().eval()

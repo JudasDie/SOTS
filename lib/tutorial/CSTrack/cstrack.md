@@ -85,7 +85,7 @@ The field `[identity]` is an integer from `0` to `num_identities - 1`, or `-1` i
 ***Note** that the values of `[x_center] [y_center] [width] [height]` are normalized by the width/height of the image, so they are floating point numbers ranging from 0 to 1.
 
 
-The datasets including Caltech, CityPersons, CUHK-SYSU, PRW, ETHZ and MOT-17 follow [JDE](https://github.com/Zhongdao/Towards-Realtime-MOT). The CrowdHuman dataset can be downloaded from their [official webpage](https://www.crowdhuman.org) or the following Baidu NetDisk and Google Drive we provide. 
+The datasets including Caltech, CityPersons, CUHK-SYSU, PRW, ETHZ and MOT-17 follow [JDE](https://github.com/Zhongdao/Towards-Realtime-MOT). 
 
 #### Caltech Pedestrian
 Baidu NetDisk: 
@@ -163,15 +163,39 @@ Google Drive:
 
 Original dataset webpage: [MOT-16](https://motchallenge.net/data/MOT16/)
 
+The CrowdHuman dataset can be downloaded from their [official webpage](https://www.crowdhuman.org). The annotation text can be downloaded from the following Baidu NetDisk and Google Drive we provide. 
+
 #### CrowdHuman
 Baidu NetDisk: 
-[[0]](https://pan.baidu.com/s/1lHa6UagcosRBz-_Y308GvQ)
+[[l77e]](https://pan.baidu.com/s/1-wlHeQwizqTN7Ce1tkrXTQ)
 
 Google Drive:
-[[0]](https://drive.google.com/file/d/1ET-6w12yHNo8DKevOVgK1dBlYs739e_3/view?usp=sharing)
+[[0]](https://drive.google.com/file/d/1Q0obzf3WFjFq6bHFjkiHCgRYjU-tUw6d/view?usp=sharing)
 
 Original dataset webpage: [CrowdHuman](https://www.crowdhuman.org)
 
+The CrowdHuman dataset has the following structure:
+```
+crowdhuman
+   |——————images
+            |——————train
+            |        └——————00001.jpg
+            |        |—————— ...
+            |        └——————0000N.jpg
+            |——————val
+            |        └——————00001.jpg
+            |        |—————— ...
+            |        └——————0000N.jpg
+   └——————labels_with_ids
+            |——————train
+            |        └——————00001.txt
+            |        |—————— ...
+            |        └——————0000N.txt
+            |——————val
+            |        └——————00001.txt
+            |        |—————— ...
+            |        └——————0000N.txt
+```
 
 ### Training
 1. Modify scripts

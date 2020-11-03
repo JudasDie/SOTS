@@ -185,4 +185,8 @@ python train.py --batch_size 8 --device 0 --weights $SOTS/weights/yolov5l.pt --e
                                                                                                 ../lib/dataset/mot/cfg/mot17_hf.json #train on the half of MOT17 training set
 ```
 
-
+## References
+```
+[1] Z. Wang, L. Zheng, et al. Towards real-time multi object tracking. ECCV2020.
+[2] Yolov5. https://github.com/ultralytics/yolov5.
+...

@@ -189,4 +189,4 @@ python train.py --batch_size 8 --device 0 --weights $SOTS/weights/yolov5l.pt --e
 ```
 [1] Z. Wang, L. Zheng, et al. Towards real-time multi object tracking. ECCV2020.
 [2] Yolov5. https://github.com/ultralytics/yolov5.
-...
+```

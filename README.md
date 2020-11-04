@@ -7,10 +7,11 @@
 
 ## Supported Trackers
 
+### Single-Object Tracking (SOT)
+
 - [x] [**OceanPlus**]()
 - [x] [**Ocean**]()
 - [x] [**SiamDW**]()
-- [x] [**CSTrack**]()
 - [ ] [**SiamMask**]()
 - [ ] [**SiamRPN++**]()
 - [ ] [**SiamFC++**]()
@@ -22,6 +23,9 @@
 - [ ] [**LWL**]()
 - [ ] [**SiamBAN**]()
 - [ ] [**SiamAttn**]()
+
+### Multi-Object Tracking (MOT)
+- [x] [**CSTrack**]()
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)

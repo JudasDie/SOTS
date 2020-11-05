@@ -7,10 +7,11 @@
 
 ## Supported Trackers
 
+### Single-Object Tracking (SOT)
+
 - [x] [**OceanPlus**]()
 - [x] [**Ocean**]()
 - [x] [**SiamDW**]()
-- [x] [**CSTrack**]()
 - [ ] [**SiamMask**]()
 - [ ] [**SiamRPN++**]()
 - [ ] [**SiamFC++**]()
@@ -22,6 +23,9 @@
 - [ ] [**LWL**]()
 - [ ] [**SiamBAN**]()
 - [ ] [**SiamAttn**]()
+
+### Multi-Object Tracking (MOT)
+- [x] [**CSTrack**]()
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)
@@ -63,9 +67,9 @@ SiamDW is one of the pioneering work using deep backbone networks for Siamese tr
 
 ### CSTrack [Arxiv now]
 **[[Paper]](https://arxiv.org/abs/2010.12138) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack/cstrack.md) [[Demo]](https://motchallenge.net/method/MOT=3601&chl=10)** <br/>
-CSTrack proposes a strong ReID based one-shot MOT framework, developed JDE. It includes a novel cross-correlation network that can effectively impel the separate branches to learn task-dependent representations, and a scale-aware attention network that learns discriminative embeddings to improve the ReID capability. This work also provides an analysis of the weak data association ability in one-shot MOT methods. Our improvements make the data association ability of our one-shot model is comparable to two-stage methods while running more faster.
+CSTrack proposes a strong ReID based one-shot MOT framework. It includes a novel cross-correlation network that can effectively impel the separate branches to learn task-dependent representations, and a scale-aware attention network that learns discriminative embeddings to improve the ReID capability. This work also provides an analysis of the weak data association ability in one-shot MOT methods. Our improvements make the data association ability of our one-shot model is comparable to two-stage methods while running more faster.
 
-<img src="https://github.com/JudasDie/SOTS/blob/master/demo/JDE_VS_CSTrack_overview.jpg" height="250" alt="CSTrack"/><br/>
+<img src="https://github.com/JudasDie/SOTS/blob/master/demo/CSTrack_CCN.jpg" height="300" alt="CSTrack"/><br/>
 \
 
 Other trackers, coming soon ...

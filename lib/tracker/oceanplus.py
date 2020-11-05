@@ -70,13 +70,24 @@ class OceanPlus(object):
             if 'iter1' in hp.keys() or 'iter2' in hp.keys():
                  net.update_iter(hp['iter1'], hp['iter2'])
 
-            print('======= hyper-parameters: pk: {:.3f}, wi: {:.2f}, lr: {:.2f} ======='.format(p.penalty_k, p.window_influence, p.lr))
+            # print('======= hyper-parameters: pk: {:.3f}, wi: {:.3f}, lr: {:.3f}, cyclic_thr: {:.3f}, choose_thr: {:.3f} ======='.format(p.penalty_k, p.window_influence, p.lr, p.cyclic_thr, p.choose_thr))
         wc_z = target_sz[0] + p.context_amount * sum(target_sz)
         hc_z = target_sz[1] + p.context_amount * sum(target_sz)
         s_z = round(np.sqrt(wc_z * hc_z))
 
         avg_chans = np.mean(im, axis=(0, 1))
         z_crop, _ = get_subwindow_tracking(im, target_pos, p.exemplar_size, s_z, avg_chans)
+
+
+        if mask is None:
+            mask = np.zeros((self.imh, self.imw))
+            x1, x2, y1, y2 = int(target_pos[0] - target_sz[0] / 2), int(target_pos[0] + target_sz[0] / 2), int(target_pos[1] - target_sz[1] / 2), int(target_pos[1] + target_sz[1] / 2)
+            mask[y1:y2 + 1, x1:x2 + 1] = 1
+            self.cyclic = True
+        else:
+            self.cyclic = False
+            print('[*] init with an annotated mask')
+
         mask_crop, _ = get_subwindow_tracking_mask(mask, target_pos, p.exemplar_size, s_z, out_mode=None)
         mask_crop = (mask_crop > 0.5).astype(np.uint8)
         mask_crop = torch.from_numpy(mask_crop)
@@ -87,7 +98,6 @@ class OceanPlus(object):
 
         z = z_crop.unsqueeze(0)
         net.template(z.cuda(), mask_crop.unsqueeze(0).cuda())
-
 
         if p.windowing == 'cosine':
             window = np.outer(np.hanning(p.score_size), np.hanning(p.score_size))  # [17,17]
@@ -100,6 +110,7 @@ class OceanPlus(object):
         state['window'] = window
         state['target_pos'] = target_pos
         state['target_sz'] = target_sz
+        state['choose_thr'] = p.choose_thr
 
         self.p = p
         self.debug_on_crop = False
@@ -113,6 +124,19 @@ class OceanPlus(object):
             print('Warning: debuging...')
             print('Warning: turning off debugging mode after this process')
             self.debug = True
+
+        if self.cyclic:
+            # print('predict a fakemask for videos without initial mask')
+
+            for i in range(3):
+                results = self.track(state, im)
+                fake = (results['mask_ori'] > results['mask_ori'].max() * 0.8).astype(np.uint8)
+                mask_crop, _ = get_subwindow_tracking_mask(fake, target_pos, p.exemplar_size, s_z, out_mode=None)
+                mask_crop = (mask_crop > 0.5).astype(np.uint8)
+                mask_crop = torch.from_numpy(mask_crop)
+                net.reinit(mask_crop.unsqueeze(0).cuda())
+                state['target_pos'] = target_pos
+                state['target_sz'] = target_sz
 
         return state
 
@@ -227,13 +251,16 @@ class OceanPlus(object):
             else:
                 polygon = None
 
+            if self.cyclic:
+                polygon = self.mask2box(mask_in_im, method='cv2poly')
+
             # ------ test -------
             results = dict()
             results['target_pos'] = target_pos
             results['target_sz'] = target_sz
             results['cls_score'] = cls_score[r_max, c_max]
             results['mask'] = (mask_in_im > self.p.seg_thr).astype(np.uint8)
-            results['mask_ori'] = mask_in_im
+            results['mask_ori'] = mask_in_im.astype(np.float)
             results['polygon'] = polygon
 
         return results
@@ -255,7 +282,11 @@ class OceanPlus(object):
 
         # debug
         if self.debug:
-            temp = name.split('/')[-2]
+            if name is not None:
+                temp = name.split('/')[-2]
+            else:
+                name = 'temp.jpg'
+                temp = 'oceanplus'
             self.name = name
             self.save_dir = join('debug', temp)
             if not exists(self.save_dir):
@@ -285,6 +316,7 @@ class OceanPlus(object):
         state['mask_ori'] = mask_ori
         state['polygon'] = polygon
         state['p'] = p
+        state['polygon'] = results['polygon']
 
         return state
 
@@ -293,7 +325,10 @@ class OceanPlus(object):
         method: cv2poly --> opencv
                 opt --> vot version
         """
-        mask = (mask > self.p.seg_thr).astype(np.uint8)
+        if not self.cyclic:
+            mask = (mask > self.p.seg_thr).astype(np.uint8)
+        else:
+            mask = (mask > self.p.cyclic_thr * mask.max()).astype(np.uint8)
         if method == 'cv2poly':
             if cv2.__version__[-5] == '4':
                 contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -322,7 +357,12 @@ class OceanPlus(object):
     def draw_mask(self, mask, im, polygon=None, box=None, mask_ratio=0.2, draw_contour=False, object_num=1):
         # draw mask
         # mask: 0, 255
-        mask = mask > self.p.seg_thr
+
+        if not self.cyclic:
+            mask = mask > self.p.seg_thr
+        else:
+            mask = mask > self.p.cyclic_thr * mask.max()
+
         mask = mask.astype('uint8')
         # COLOR
         COLORS = np.random.randint(128, 255, size=(object_num, 3), dtype="uint8")
@@ -455,6 +495,8 @@ class AdaConfig(object):
     lambda_s = 0.2
     iter1 = 0.33
     iter2 = 0.33
+    cyclic_thr = 0.85
+    choose_thr = 0.5
 
 
     def update(self, newparam=None):

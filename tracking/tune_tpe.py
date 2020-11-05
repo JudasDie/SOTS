@@ -7,9 +7,11 @@ import numpy as np
 import models.models as models
 from utils.utils import load_pretrain
 from test_ocean import auc_otb, eao_vot
+from test_oceanplus import eao_vot_oceanplus
 from test_siamdw import auc_otb_fc, eao_vot_fc
 
 from tracker.ocean import Ocean
+from tracker.oceanplus import OceanPlus
 from tracker.siamfc import SiamFC
 from easydict import EasyDict as edict
 
@@ -32,6 +34,7 @@ parser.add_argument('--trial_per_gpu', default=8, type=int, help='trail per gpu'
 parser.add_argument('--dataset', default='OTB2013', type=str, help='dataset')
 parser.add_argument('--align', default='True', type=str, help='align')
 parser.add_argument('--online', default=False, type=bool, help='online flag')
+parser.add_argument('--MMS', default=False, type=bool, help='MMS flag')
 
 args = parser.parse_args()
 
@@ -50,6 +53,8 @@ if args.arch in ['Ocean']:
     info.TRT = 'TRT' in args.arch
     if info.TRT:
         info.align = False
+elif args.arch in ['OceanPlus']:
+    info.align, info.TRT, info.online = False, False, False
 elif args.arch in ['SiamDW']:
     pass
 else:
@@ -61,9 +66,12 @@ args.resume = os.path.abspath(args.resume)
 # fitness function
 def fitness(config, reporter):
     # create model
-    if 'Ocean' in args.arch:
+    if args.arch in ['Ocean']:
         model = models.__dict__[args.arch](align=info.align)
         tracker = Ocean(info)
+    elif args.arch in ['OceanPlus']:
+        model = models.__dict__[args.arch](online=args.online, mms=args.MMS)
+        tracker = OceanPlus(info)
     elif 'SiamDW' in args.arch:
         model = models.__dict__[args.arch]()
         tracker = SiamFC(info)
@@ -76,7 +84,7 @@ def fitness(config, reporter):
     print('pretrained model has been loaded')
     print(os.environ['CUDA_VISIBLE_DEVICES'])
 
-    if 'Ocean' in args.arch:
+    if args.arch in ['Ocean']:
         penalty_k = config["penalty_k"]
         scale_lr = config["scale_lr"]
         window_influence = config["window_influence"]
@@ -95,7 +103,33 @@ def fitness(config, reporter):
         model_config['hp']['small_sz'] = small_sz
         model_config['hp']['big_sz'] = big_sz
         model_config['hp']['ratio'] = ratio
-    elif 'SiamDW' in args.arch or 'SiamFC' in args.arch:
+    elif args.arch in ['OceanPlus']:
+        penalty_k = config["penalty_k"]
+        scale_lr = config["scale_lr"]
+        window_influence = config["window_influence"]
+        small_sz = config["small_sz"]
+        big_sz = config["big_sz"]
+        lambda_u = config["lambda_u"]
+        lambda_s = config["lambda_s"]
+        cyclic_thr = config["cyclic_thr"]
+        choose_thr = config["choose_thr"]
+
+        model_config = dict()
+        model_config['benchmark'] = args.dataset
+        model_config['arch'] = args.arch
+        model_config['resume'] = args.resume
+        model_config['hp'] = dict()
+        model_config['hp']['penalty_k'] = penalty_k
+        model_config['hp']['window_influence'] = window_influence
+        model_config['hp']['lr'] = scale_lr
+        model_config['hp']['small_sz'] = small_sz
+        model_config['hp']['big_sz'] = big_sz
+        model_config['hp']['lambda_u'] = lambda_u
+        model_config['hp']['lambda_s'] = lambda_s
+        model_config['hp']['cyclic_thr'] = cyclic_thr
+        model_config['hp']['choose_thr'] = choose_thr
+
+    elif args.arch in ['SiamFC', 'SiamDW']:
         scale_step = config["scale_step"]
         scale_penalty = config["scale_penalty"]
         scale_lr = config["scale_lr"]
@@ -112,18 +146,26 @@ def fitness(config, reporter):
     else:
         raise ValueError('not supported tracker')
 
+    # -------------
+    # For OceanPlus
+    # -------------
+    # VOT and Ocean
+    if args.dataset.startswith('VOT') and args.arch in ['OceanPlus']:
+        eao = eao_vot_oceanplus(tracker, model, model_config)
+        print("penalty_k: {0}, scale_lr: {1}, window_influence: {2}, small_sz: {3}, big_sz: {4}, lambda_u: {5}, lambda_s: {6}, cyclic_thr: {7}, choose_thr: {8}, eao: {9}".format(penalty_k, scale_lr, window_influence, small_sz, big_sz, lambda_u, lambda_s, cyclic_thr, choose_thr, eao))
+        reporter(EAO=eao)
+
     # ----------
     # For Ocean
     # ----------
-
     # VOT and Ocean
-    if args.dataset.startswith('VOT') and 'Ocean' in args.arch:
+    if args.dataset.startswith('VOT') and args.arch in ['Ocean']:
         eao = eao_vot(tracker, model, model_config)
         print("penalty_k: {0}, scale_lr: {1}, window_influence: {2}, small_sz: {3}, big_sz: {4}, ratio: {6}, eao: {5}".format(penalty_k, scale_lr, window_influence, small_sz, big_sz, eao, ratio))
         reporter(EAO=eao)
 
     # OTB and Ocean
-    if args.dataset.startswith('OTB') and 'Ocean' in args.arch:
+    if args.dataset.startswith('OTB') and args.arch in ['Ocean']:
         auc = auc_otb(tracker, model, model_config)
         print("penalty_k: {0}, scale_lr: {1}, window_influence: {2}, small_sz: {3}, big_sz: {4}, ratio: {6}, eao: {5}".format(penalty_k, scale_lr, window_influence, small_sz, big_sz, auc.item(), ratio))
         reporter(AUC=auc)
@@ -150,7 +192,7 @@ if __name__ == "__main__":
     ray.init(num_gpus=args.gpu_nums, num_cpus=args.gpu_nums * 8,  object_store_memory=500000000)
     tune.register_trainable("fitness", fitness)
 
-    if 'Ocean' in args.arch:
+    if args.arch in ['Ocean']:
         params = {
                 "penalty_k": hp.quniform('penalty_k', 0.001, 0.2, 0.001),
                 "scale_lr": hp.quniform('scale_lr', 0.3, 0.8, 0.001),
@@ -159,6 +201,18 @@ if __name__ == "__main__":
                 "big_sz": hp.choice("big_sz", [271, 287]),
                 "ratio": hp.quniform('ratio', 0.7, 1, 0.01),
                 }
+    elif args.arch in ['OceanPlus']:
+        params = {
+            "penalty_k": hp.choice('penalty_k', [0.06]),
+            "scale_lr": hp.choice('scale_lr', [0.644]),
+            "window_influence": hp.choice('window_influence', [0.484]),
+            "small_sz": hp.choice("small_sz", [255]),
+            "big_sz": hp.choice("big_sz", [287]),
+            "lambda_u": hp.quniform('lambda_u', 0.1, 1, 0.05),
+            "lambda_s": hp.quniform('lambda_s', 0.1, 1, 0.05),
+            "cyclic_thr": hp.quniform('cyclic_thr', 0.7, 1, 0.01),
+            "choose_thr": hp.quniform('choose_thr', 0.4, 0.8, 0.01),
+        }
     elif 'SiamFC' in args.arch or 'SiamDW' in args.arch:
         params = {
             "scale_step": hp.quniform('scale_step', 1.0, 1.2, 0.0001),
@@ -169,7 +223,7 @@ if __name__ == "__main__":
     else:
         raise ValueError('not supported tracker')
 
-    if ('VOT' not in args.dataset or not args.align) and 'Ocean' in args.arch:
+    if ('VOT' not in args.dataset or not args.align) and args.arch in ['Ocean']:
         params['ratio'] = hp.choice("ratio", [1]) 
  
     print('tuning range: ')

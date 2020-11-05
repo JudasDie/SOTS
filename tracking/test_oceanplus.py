@@ -18,6 +18,8 @@ from tracker.oceanplus import OceanPlus
 from tracker.online import ONLINE
 from easydict import EasyDict as edict
 from utils.utils import load_pretrain, cxy_wh_2_rect, get_axis_aligned_bbox, load_dataset, poly_iou
+from eval_toolkit.pysot.datasets import VOTDataset
+from eval_toolkit.pysot.evaluation import EAOBenchmark
 import pdb
 
 def parse_args():
@@ -27,8 +29,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch SiamFC Tracking Test')
     parser.add_argument('--arch', dest='arch', default='OceanPlus', choices=['OceanPlus', 'OceanPlusTRT'], help='backbone architecture')
     parser.add_argument('--mms', default='True', type=str, choices=['True', 'False'], help='wether to use MMS')
-    parser.add_argument('--resume', default="snapshot/OceanPlusMMS.pth", type=str, help='pretrained model')
-    parser.add_argument('--dataset', default='VOT2020', help='dataset test')
+    parser.add_argument('--resume', default="snapshot/OceanPlusMSS.pth", type=str, help='pretrained model')
+    parser.add_argument('--dataset', default='VOT2019', help='dataset test')
     parser.add_argument('--online', action="store_true", help='whether to use online')
     parser.add_argument('--vis', action="store_true", help='visualize tracking results')
     parser.add_argument('--hp', default=None, type=str, help='hyper-parameters')
@@ -259,6 +261,126 @@ def track_vos(siam_tracker, online_tracker, siam_net, video, args, hp=None):
 
     print('Video: {:12s} Time: {:2.1f}s Speed: {:3.1f}fps'.format(video['name'], toc, (f+1) / toc))
 
+def track_box(siam_tracker, online_tracker, siam_net, video, args):
+    """
+    track a benchmark with only box annoated
+    attention: not for benchmark evaluation, just a demo
+    """
+
+    tracker_path = os.path.join('result', args.dataset, args.arch)
+
+    if 'VOT' in args.dataset:
+        baseline_path = os.path.join(tracker_path, 'baseline')
+        video_path = os.path.join(baseline_path, video['name'])
+        if not os.path.exists(video_path):
+            os.makedirs(video_path)
+        result_path = os.path.join(video_path, video['name'] + '_001.txt')
+    else:
+        result_path = os.path.join(tracker_path, '{:s}.txt'.format(video['name']))
+
+    if os.path.exists(result_path):
+        return  # for mult-gputesting
+
+    regions = []
+    b_overlaps, b_overlaps2, b_overlaps3 = [], [], []
+    lost = 0
+    start_frame, toc = 0, 0
+    image_files, gt = video['image_files'], video['gt']
+
+    for f, image_file in enumerate(image_files):
+        im = cv2.imread(image_file)
+        if args.online:
+            rgb_im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        if len(im.shape) == 2: im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)   # align with training
+
+        tic = cv2.getTickCount()
+        if f == start_frame:  # init
+            cx, cy, w, h = get_axis_aligned_bbox(gt[f])
+            target_pos = np.array([cx, cy])
+            target_sz = np.array([w, h])
+            mask_gt = None
+
+            state = siam_tracker.init(im, target_pos, target_sz, siam_net, online=args.online, mask=mask_gt, debug=args.debug)  # init siamese tracker
+
+            if args.online:
+                online_tracker.init(im, rgb_im, siam_net, target_pos, target_sz, True, dataname=args.dataset, resume=args.resume)
+
+        elif f > start_frame:  # tracking
+            if args.online:
+                state = online_tracker.track(im, rgb_im, siam_tracker, state)
+            else:
+                state = siam_tracker.track(state, im, name=image_file)
+
+            mask = state['mask']
+
+            location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
+            b_overlap = poly_iou(gt[f], location) if 'VOT' in args.dataset else 1
+            polygon = state['polygon']
+
+            if not polygon is None:
+                polygon = [polygon[0][0], polygon[0][1], polygon[1][0], polygon[1][1], polygon[2][0], polygon[2][1], polygon[3][0], polygon[3][1]]
+                polygon = np.array(polygon)
+                # b_overlap2 = poly_iou(gt[f], polygon)
+            else:
+                x1, y1, w, h = location
+                x2, y2 = x1 + w, y1 + h
+                polygon = np.array([x1, y1, x2, y1, x2, y2, x1, y2])
+
+            if poly_iou(np.array(location), np.array(polygon)) > state['choose_thr']:
+                record = polygon
+                # b_overlaps3.append(b_overlap2)
+            else:
+                x1, y1, w, h = location
+                x2, y2 = x1 + w, y1 + h
+                polygon = np.array([x1, y1, x2, y1, x2, y2, x1, y2])
+                record = polygon
+                # b_overlaps3.append(b_overlap)
+
+            # print('b_overlap: {}, b_overlap2: {}'.format(b_overlap, b_overlap2))
+            # b_overlaps.append(b_overlap)
+            # b_overlaps2.append(b_overlap2)
+
+            if b_overlap > 0:
+                regions.append(record)
+            else:
+                regions.append(2)
+                start_frame = f + 5
+                lost += 1
+
+            if args.vis:
+                COLORS = np.random.randint(128, 255, size=(1, 3), dtype="uint8")
+                COLORS = np.vstack([[0, 0, 0], COLORS]).astype("uint8")
+                mask = COLORS[mask]
+                output = ((0.4 * im) + (0.6 * mask)).astype("uint8")
+                cv2.imshow("mask", output)
+                cv2.waitKey(1)
+
+        toc += cv2.getTickCount() - tic
+
+    # print('b_overlap: {}, b_overlap2: {}, b_overlap3: {}'.format(np.array(b_overlaps).mean(), np.array(b_overlaps2).mean(), np.array(b_overlaps3).mean()))
+
+    with open(result_path, "w") as fin:
+        if 'VOT' in args.dataset:
+            for x in regions:
+                if isinstance(x, int):
+                    fin.write("{:d}\n".format(x))
+                else:
+                    p_bbox = x.copy()
+                    fin.write(','.join([str(i) for i in p_bbox]) + '\n')
+        elif 'OTB' in args.dataset or 'LASOT' in args.dataset:
+            for x in regions:
+                p_bbox = x.copy()
+                fin.write(
+                    ','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        elif 'VISDRONE' in args.dataset or 'GOT10K' in args.dataset:
+            for x in regions:
+                p_bbox = x.copy()
+                fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+
+    toc /= cv2.getTickFrequency()
+    print('Video: {:12s} Time: {:2.1f}s Speed: {:3.1f}fps'.format(video['name'], toc, f / toc))
+
+
 
 def main():
     print('Warning: this is a demo to test OceanPlus')
@@ -323,9 +445,169 @@ def main():
     for video in video_keys:
         if args.dataset in ['DAVIS2016', 'DAVIS2017', 'YTBVOS']:  # VOS
             track_vos(siam_tracker, online_tracker, siam_net, dataset[video], args, hp)
-        else:  # VOTS (i.e. VOT2020)
-            if video == 'butterfly':
-                track(siam_tracker, online_tracker, siam_net, dataset[video], args)
+        elif args.dataset in ['VOT2020']:  # VOTS (i.e. VOT2020)
+            track(siam_tracker, online_tracker, siam_net, dataset[video], args)
+        else:
+            track_box(siam_tracker, online_tracker, siam_net, dataset[video], args)
+
+
+# -------------------
+# For tune
+# -------------------
+def track_tune(tracker, net, video, config):
+    arch = config['arch']
+    benchmark_name = config['benchmark']
+    resume = config['resume']
+    hp = config['hp']  # scale_step, scale_penalty, scale_lr, window_influence
+
+    tracker_path = join('test', (benchmark_name + resume.split('/')[-1].split('.')[0] +
+                                     '_small_size_{:.4f}'.format(hp['small_sz']) +
+                                     '_big_size_{:.4f}'.format(hp['big_sz']) +
+                                     '_lambda_u_{:.4f}'.format(hp['choose_thr']) +
+                                     '_lambda_s_{:.4f}'.format(hp['choose_thr']) +
+                                     '_cyclic_thr_{:.4f}'.format(hp['choose_thr']) +
+                                     '_choose_thr_{:.4f}'.format(hp['choose_thr']) +
+                                     '_penalty_k_{:.4f}'.format(hp['penalty_k']) +
+                                     '_w_influence_{:.4f}'.format(hp['window_influence']) +
+                                     '_scale_lr_{:.4f}'.format(hp['lr'])).replace('.', '_'))  # no .
+    if not os.path.exists(tracker_path):
+        os.makedirs(tracker_path)
+
+    if 'VOT' in benchmark_name:
+        baseline_path = join(tracker_path, 'baseline')
+        video_path = join(baseline_path, video['name'])
+        if not os.path.exists(video_path):
+            os.makedirs(video_path)
+        result_path = join(video_path, video['name'] + '_001.txt')
+    elif 'GOT10K' in benchmark_name:
+        re_video_path = os.path.join(tracker_path, video['name'])
+        if not exists(re_video_path): os.makedirs(re_video_path)
+        result_path = os.path.join(re_video_path, '{:s}.txt'.format(video['name']))
+    else:
+        result_path = join(tracker_path, '{:s}.txt'.format(video['name']))
+
+    # occ for parallel running
+    if not os.path.exists(result_path):
+        fin = open(result_path, 'w')
+        fin.close()
+    else:
+        if benchmark_name.startswith('OTB'):
+            return tracker_path
+        elif benchmark_name.startswith('VOT') or benchmark_name.startswith('GOT10K'):
+            return 0
+        else:
+            print('benchmark not supported now')
+            return
+
+    start_frame, lost_times, toc = 0, 0, 0
+
+    regions = []  # result and states[1 init / 2 lost / 0 skip]
+
+    # for rgbt splited test
+
+    image_files, gt = video['image_files'], video['gt']
+
+    for f, image_file in enumerate(image_files):
+        im = cv2.imread(image_file)
+        if len(im.shape) == 2:
+            im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+        if f == start_frame:  # init
+            cx, cy, w, h = get_axis_aligned_bbox(gt[f])
+            target_pos = np.array([cx, cy])
+            target_sz = np.array([w, h])
+            mask_gt = None
+
+            state = tracker.init(im, target_pos, target_sz, net, online=False, mask=mask_gt, debug=False, hp=hp)  # init tracker
+            location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
+            regions.append([float(1)] if 'VOT' in benchmark_name else gt[f])
+        elif f > start_frame:  # tracking
+            state = tracker.track(state, im)  # track
+            location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
+            b_overlap = poly_iou(gt[f], location) if 'VOT' in benchmark_name else 1
+
+            polygon = state['polygon']
+            if not polygon is None:
+                polygon = [polygon[0][0], polygon[0][1], polygon[1][0], polygon[1][1], polygon[2][0], polygon[2][1],
+                           polygon[3][0], polygon[3][1]]
+                polygon = np.array(polygon)
+                # b_overlap2 = poly_iou(gt[f], polygon)
+            else:
+                x1, y1, w, h = location
+                x2, y2 = x1 + w, y1 + h
+                polygon = np.array([x1, y1, x2, y1, x2, y2, x1, y2])
+
+            if poly_iou(np.array(location), np.array(polygon)) > state['choose_thr']:
+                record = polygon
+                # b_overlaps3.append(b_overlap2)
+            else:
+                x1, y1, w, h = location
+                x2, y2 = x1 + w, y1 + h
+                polygon = np.array([x1, y1, x2, y1, x2, y2, x1, y2])
+                record = polygon
+                # b_overlaps3.append(b_overlap)
+
+            if b_overlap > 0:
+                regions.append(record)
+            else:
+                regions.append([float(2)])
+                lost_times += 1
+                start_frame = f + 5  # skip 5 frames
+        else:  # skip
+            regions.append([float(0)])
+
+    # save results for OTB
+    if 'OTB' in benchmark_name or 'LASOT' in benchmark_name:
+        with open(result_path, "w") as fin:
+            for x in regions:
+                p_bbox = x.copy()
+                fin.write(
+                    ','.join([str(i + 1) if idx == 0 or idx == 1 else str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+    elif 'VISDRONE' in benchmark_name  or 'GOT10K' in benchmark_name:
+        with open(result_path, "w") as fin:
+            for x in regions:
+                p_bbox = x.copy()
+                fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+    elif 'VOT' in benchmark_name:
+        with open(result_path, "w") as fin:
+            for x in regions:
+                if isinstance(x, int):
+                    fin.write("{:d}\n".format(x))
+                else:
+                    p_bbox = x.copy()
+                    fin.write(','.join([str(i) for i in p_bbox]) + '\n')
+
+    if 'OTB' in benchmark_name or 'VIS' in benchmark_name or 'VOT' in benchmark_name or 'GOT10K' in benchmark_name:
+        return tracker_path
+    else:
+        print('benchmark not supported now')
+
+
+def eao_vot_oceanplus(tracker, net, config):
+    dataset = load_dataset(config['benchmark'])
+    video_keys = sorted(list(dataset.keys()).copy())
+
+    for video in video_keys:
+        result_path = track_tune(tracker, net, dataset[video], config)
+
+    re_path = result_path.split('/')[0]
+    tracker = result_path.split('/')[-1]
+
+    # debug
+    print('======> debug: results_path')
+    print(result_path)
+    print(os.system("ls"))
+    print(join(realpath(dirname(__file__)), '../dataset'))
+
+    # give abs path to json path
+    data_path = join(realpath(dirname(__file__)), '../dataset')
+    dataset = VOTDataset(config['benchmark'], data_path)
+
+    dataset.set_tracker(re_path, tracker)
+    benchmark = EAOBenchmark(dataset)
+    eao = benchmark.eval(tracker)
+    eao = eao[tracker]['all']
+
+    return eao
 
 
 if __name__ == '__main__':

@@ -31,6 +31,12 @@ class OceanPlus_(nn.Module):
         pred_score = self.connect_model(template_feature, search_feature)
         return pred_score
 
+    def update_lambda(self, lambda_u, lambda_s):
+        self.lambda_u = lambda_u
+        self.lambda_s = lambda_s
+
+        # print('[*] update lambda, lambda_u {:.2f}, lambda_s {:.2f}'.format(self.lambda_u, self.lambda_s))
+
     def update_roi_template(self, target_pos, target_sz, score):
         """
         :param target_pos:  pos in search (not the original)
@@ -74,7 +80,9 @@ class OceanPlus_(nn.Module):
         self.template_mask = template_mask.float()
         self.MA_kernel = self.zf.detach()
         self.zf_update = None
-    
+
+    def reinit(self, mask):
+        self.template_mask = mask.float()
 
     def track(self, x):
 

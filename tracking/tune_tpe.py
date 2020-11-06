@@ -7,7 +7,7 @@ import numpy as np
 import models.models as models
 from utils.utils import load_pretrain
 from test_ocean import auc_otb, eao_vot
-from test_oceanplus import eao_vot_oceanplus
+from test_oceanplus import eao_vot_oceanplus, auc_got10k_oceanplus
 from test_siamdw import auc_otb_fc, eao_vot_fc
 
 from tracker.ocean import Ocean
@@ -149,11 +149,17 @@ def fitness(config, reporter):
     # -------------
     # For OceanPlus
     # -------------
-    # VOT and Ocean
+    # VOT and OceanPlus
     if args.dataset.startswith('VOT') and args.arch in ['OceanPlus']:
         eao = eao_vot_oceanplus(tracker, model, model_config)
         print("penalty_k: {0}, scale_lr: {1}, window_influence: {2}, small_sz: {3}, big_sz: {4}, lambda_u: {5}, lambda_s: {6}, cyclic_thr: {7}, choose_thr: {8}, eao: {9}".format(penalty_k, scale_lr, window_influence, small_sz, big_sz, lambda_u, lambda_s, cyclic_thr, choose_thr, eao))
         reporter(EAO=eao)
+
+    # GOT10K and OceanPlus
+    if args.dataset.startswith('GOT') and args.arch in ['OceanPlus']:
+        auc = auc_got10k_oceanplus(tracker, model, model_config)
+        print("penalty_k: {0}, scale_lr: {1}, window_influence: {2}, small_sz: {3}, big_sz: {4}, lambda_u: {5}, lambda_s: {6}, cyclic_thr: {7}, choose_thr: {8}, eao: {9}".format(penalty_k, scale_lr, window_influence, small_sz, big_sz, lambda_u, lambda_s, cyclic_thr, choose_thr, auc.item()))
+        reporter(AUC=auc)
 
     # ----------
     # For Ocean
@@ -203,11 +209,16 @@ if __name__ == "__main__":
                 }
     elif args.arch in ['OceanPlus']:
         params = {
-            "penalty_k": hp.choice('penalty_k', [0.06]),
-            "scale_lr": hp.choice('scale_lr', [0.644]),
-            "window_influence": hp.choice('window_influence', [0.484]),
+            # "penalty_k": hp.choice('penalty_k', [0.06]),
+            # "scale_lr": hp.choice('scale_lr', [0.644]),
+            # "window_influence": hp.choice('window_influence', [0.484]),
+            # "small_sz": hp.choice("small_sz", [255]),
+            # "big_sz": hp.choice("big_sz", [287]),
+            "penalty_k": hp.choice('penalty_k', [0.022]),
+            "scale_lr": hp.choice('scale_lr', [0.799]),
+            "window_influence": hp.choice('window_influence', [0.118]),
             "small_sz": hp.choice("small_sz", [255]),
-            "big_sz": hp.choice("big_sz", [287]),
+            "big_sz": hp.choice("big_sz", [255]),
             "lambda_u": hp.quniform('lambda_u', 0.1, 1, 0.05),
             "lambda_s": hp.quniform('lambda_s', 0.1, 1, 0.05),
             "cyclic_thr": hp.quniform('cyclic_thr', 0.7, 1, 0.01),
@@ -272,7 +283,8 @@ if __name__ == "__main__":
             max_t=400,
             grace_period=20
         )
-        algo = HyperOptSearch(params, max_concurrent=args.gpu_nums*2 + 1, reward_attr="AUC")  #
+        algo = HyperOptSearch(params, max_concurrent=args.gpu_nums * args.trial_per_gpu + 1, metric='AUC', mode='max')
+        # algo = HyperOptSearch(params, max_concurrent=args.gpu_nums*2 + 1, reward_attr="AUC")  #
     else:
         raise ValueError("not support other dataset now")
 

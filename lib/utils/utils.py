@@ -506,7 +506,10 @@ def load_dataset(dataset):
         seq_path = base_path
 
         videos = sorted(os.listdir(seq_path))
-        videos.remove('list.txt')
+        try:
+            videos.remove('list.txt')
+        except:
+            pass
         for video in videos:
             video_path = join(seq_path, video)
             image_path = join(video_path, '*.jpg')

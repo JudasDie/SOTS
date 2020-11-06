@@ -20,6 +20,7 @@ from easydict import EasyDict as edict
 from utils.utils import load_pretrain, cxy_wh_2_rect, get_axis_aligned_bbox, load_dataset, poly_iou
 from eval_toolkit.pysot.datasets import VOTDataset
 from eval_toolkit.pysot.evaluation import EAOBenchmark
+from core.eval_got10k import eval_got10k_tune
 import pdb
 
 def parse_args():
@@ -340,6 +341,10 @@ def track_box(siam_tracker, online_tracker, siam_net, video, args):
             # b_overlaps.append(b_overlap)
             # b_overlaps2.append(b_overlap2)
 
+            if not 'VOT' in benchmark_name:  # change polygon to [x, y, w, h]
+                x1, y1, x2, y2 = record[0], record[1], record[4], record[5]
+                record = np.array([x1, y1, x2 - x1 + 1, y2 - y1 + 1])
+
             if b_overlap > 0:
                 regions.append(record)
             else:
@@ -530,7 +535,6 @@ def track_tune(tracker, net, video, config):
                 polygon = [polygon[0][0], polygon[0][1], polygon[1][0], polygon[1][1], polygon[2][0], polygon[2][1],
                            polygon[3][0], polygon[3][1]]
                 polygon = np.array(polygon)
-                # b_overlap2 = poly_iou(gt[f], polygon)
             else:
                 x1, y1, w, h = location
                 x2, y2 = x1 + w, y1 + h
@@ -538,13 +542,15 @@ def track_tune(tracker, net, video, config):
 
             if poly_iou(np.array(location), np.array(polygon)) > state['choose_thr']:
                 record = polygon
-                # b_overlaps3.append(b_overlap2)
             else:
                 x1, y1, w, h = location
                 x2, y2 = x1 + w, y1 + h
                 polygon = np.array([x1, y1, x2, y1, x2, y2, x1, y2])
                 record = polygon
-                # b_overlaps3.append(b_overlap)
+
+            if not 'VOT' in benchmark_name:  # change polygon to [x, y, w, h]
+                x1, y1, x2, y2 = record[0], record[1], record[4], record[5]
+                record = np.array([x1, y1, x2 - x1 + 1, y2 - y1 + 1])
 
             if b_overlap > 0:
                 regions.append(record)
@@ -609,6 +615,19 @@ def eao_vot_oceanplus(tracker, net, config):
 
     return eao
 
+def auc_got10k_oceanplus(tracker, net, config):
+    """
+    get AUC for GOT10K VAL benchmark
+    """
+    dataset = load_dataset(config['benchmark'])
+    video_keys = list(dataset.keys()).copy()
+    random.shuffle(video_keys)
+    for video in video_keys:
+        result_path = track_tune(tracker, net, dataset[video], config)
+    print(result_path)
+    auc = eval_got10k_tune(result_path, config['benchmark'])
+
+    return auc
 
 if __name__ == '__main__':
     main()

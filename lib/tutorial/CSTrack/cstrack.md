@@ -4,15 +4,14 @@ We assume the root path is $SOTS, e.g. `/home/zpzhang/SOTS`
 
 ## Set up environment
 
+`$conda_path` denotes your anaconda path, e.g. `/home/zpzhang/anaconda3`
 ```
-cd $TracKit/lib/tutorial
-bash install.sh $conda_path TracKit
 conda create -n CSTrack python=3.8
 source activate CSTrack
 cd SOTS/lib/tutorial/CSTrack/
 pip install -r requirements.txt
 ```
-`$conda_path` denotes your anaconda path, e.g. `/home/zpzhang/anaconda3`
+
 
 ## Testing
 ### Prepare data and models

@@ -1,10 +1,10 @@
 # CSTrack tutorial
 
-We assume the root path is $SOTS, e.g. `/home/zpzhang/SOTS`
+We assume the root path is $SOTS, e.g. `/home/chaoliang/SOTS`
 
 ## Set up environment
 
-`$conda_path` denotes your anaconda path, e.g. `/home/zpzhang/anaconda3`
+`$conda_path` denotes your anaconda path, e.g. `/home/chaoliang/anaconda3`
 ```
 conda create -n CSTrack python=3.8
 source activate CSTrack

@@ -71,7 +71,7 @@ CSTrack proposes a strong ReID based one-shot MOT framework. It includes a novel
 
 <img src="https://github.com/JudasDie/SOTS/blob/master/demo/CSTrack_CCN.jpg" height="300" alt="CSTrack"/><br/>
 
-This version can achieve the performance described in the paper (70.7 MOTA on MOT16, 70.6 MOTA on MOT17). The new version will be released soon. If you are interested in our work or have any questions, please contact me at 201921060415@std.uestc.edu.cn
+This version can achieve the performance described in the paper (70.7 MOTA on MOT16, 70.6 MOTA on MOT17). The new version will be released soon. If you are interested in our work or have any questions, please contact me at 201921060415@std.uestc.edu.cn.
 
 
 Other trackers, coming soon ...

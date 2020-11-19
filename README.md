@@ -1,6 +1,6 @@
-# SOTS
+# SOTS and MOT
 
-### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS).
+### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS), and multiple object tracking (MOT).
 
 ## News
 :boom: **Repo Init:** Official implementation of [OceanPlus]() is uploaded. [OceanPlus](), [Ocean]() and [SiamDW]() are supported now. 
@@ -70,7 +70,9 @@ SiamDW is one of the pioneering work using deep backbone networks for Siamese tr
 CSTrack proposes a strong ReID based one-shot MOT framework. It includes a novel cross-correlation network that can effectively impel the separate branches to learn task-dependent representations, and a scale-aware attention network that learns discriminative embeddings to improve the ReID capability. This work also provides an analysis of the weak data association ability in one-shot MOT methods. Our improvements make the data association ability of our one-shot model is comparable to two-stage methods while running more faster.
 
 <img src="https://github.com/JudasDie/SOTS/blob/master/demo/CSTrack_CCN.jpg" height="300" alt="CSTrack"/><br/>
-\
+
+This version can achieve the performance described in the paper (70.7 MOTA on MOT16, 70.6 MOTA on MOT17). The new version will be released soon. If you are interested in our work or have any questions, please contact me at 201921060415@std.uestc.edu.cn.
+
 
 Other trackers, coming soon ...
 

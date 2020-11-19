@@ -1,11 +1,11 @@
-# SOTS and MOT
+# Single/Multiple Object Tracking and Segmentation
 
 ### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS), and multiple object tracking (MOT).
 
 ## News
 :boom: **Repo Init:** Official implementation of [OceanPlus]() is uploaded. [OceanPlus](), [Ocean]() and [SiamDW]() are supported now. 
 
-## Supported Trackers
+## Supported Trackers (SOT and MOT)
 
 ### Single-Object Tracking (SOT)
 

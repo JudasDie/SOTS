@@ -22,14 +22,22 @@ import models.models as models
 
 from os.path import exists, join, dirname, realpath
 from tracker.ocean import Ocean
+from tracker.oceanplus import OceanPlus
 from tracker.online import ONLINE
 from easydict import EasyDict as edict
 from utils.utils import load_pretrain, cxy_wh_2_rect, get_axis_aligned_bbox, load_dataset, poly_iou
 
-from eval_toolkit.pysot.datasets import VOTDataset
-from eval_toolkit.pysot.evaluation import EAOBenchmark
 from tqdm import tqdm
+#
+# try:
+#     from MergeTrack.refinement_net_functions import refinement_net_init, do_refinement
+#     abs_path = os.path.dirname(os.path.abspath(__file__))
+#     path = os.path.join(abs_path, '../lib/models/box2seg/code/refinement_net/configs/live')
+#     refinement_net = refinement_net_init(path)
+# except:
+#     pass
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
 def parse_args():
     """
@@ -37,17 +45,23 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='PyTorch SiamFC Tracking Test')
     parser.add_argument('--arch', default='Ocean', type=str, help='backbone architecture')
-    parser.add_argument('--resume', default='snapshot/OceanV19on.pth', type=str, help='pretrained model')
-    parser.add_argument('--video', default='./dataset/soccer1.mp4', type=str, help='video file path')
-    parser.add_argument('--online', default=True, type=bool, help='use online or offline model')
+    parser.add_argument('--resume', default='snapshot_finetune/checkpoint_e20.pth', type=str, help='pretrained model')
+    parser.add_argument('--video', default='./dataset/Demonstration/Sky/segment1.mp4', type=str, help='video file path')
+    parser.add_argument('--online', default=False, type=bool, help='use online or offline model')
     parser.add_argument('--save', default=True, type=bool, help='save pictures')
     parser.add_argument('--init_bbox', default=None, help='bbox in the first frame None or [lx, ly, w, h]')
+    parser.add_argument('--box2seg', default=False, help='use box2seg init mask')
     args = parser.parse_args()
 
     return args
 
 
 def track_video(siam_tracker, online_tracker, siam_net, video_path, init_box=None, args=None):
+    if args.arch in ['OceanPlus']:
+        segMask = True
+    else:
+        segMask = False
+
 
     assert os.path.isfile(video_path), "please provide a valid video file"
 
@@ -76,10 +90,14 @@ def track_video(siam_tracker, online_tracker, siam_net, video_path, init_box=Non
         target_pos = np.array([lx + w/2, ly + h/2])
         target_sz = np.array([w, h])
 
-        state = siam_tracker.init(frame, target_pos, target_sz, siam_net)  # init tracker
-        rgb_im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if segMask:
+            mask_gt = None
+            state = siam_tracker.init(im, target_pos, target_sz, siam_net, online=args.online, mask=mask_gt, debug=True)  # init siamese tracker
+        else:
+            state = siam_tracker.init(frame, target_pos, target_sz, siam_net)  # init tracker
 
         if args.online:
+            rgb_im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             online_tracker.init(frame, rgb_im, siam_net, target_pos, target_sz, True, dataname='VOT2019', resume=args.resume)
 
     else:
@@ -94,10 +112,22 @@ def track_video(siam_tracker, online_tracker, siam_net, video_path, init_box=Non
             target_pos = np.array([lx + w / 2, ly + h / 2])
             target_sz = np.array([w, h])
 
-            state = siam_tracker.init(frame_disp, target_pos, target_sz, siam_net)  # init tracker
-            rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
+            if segMask:
+                if args.box2seg:
+                    mask_gt = None
+                else:
+                    rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
+                    proposals = dict()
+                    proposals["score"] = state['cls_score']
+                    proposals["bbox"] = [lx, ly, w, h]
+                    mask_gt = do_refinement(proposals, rgb_im, refinement_net)
+
+                state = siam_tracker.init(frame_disp, target_pos, target_sz, siam_net, online=args.online, mask=mask_gt, debug=True)  # init siamese tracker
+            else:
+                state = siam_tracker.init(frame_disp, target_pos, target_sz, siam_net)  # init tracker
 
             if args.online:
+                rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
                 online_tracker.init(frame_disp, rgb_im, siam_net, target_pos, target_sz, True, dataname='VOT2019', resume=args.resume)
 
             break
@@ -109,18 +139,20 @@ def track_video(siam_tracker, online_tracker, siam_net, video_path, init_box=Non
             return
 
         frame_disp = frame.copy()
-        rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
 
         # Draw box
         if args.online:
+            rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
             state = online_tracker.track(frame_disp, rgb_im, siam_tracker, state)
         else:
             state = siam_tracker.track(state, frame_disp)
 
-        location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
-        x1, y1, x2, y2 = int(location[0]), int(location[1]), int(location[0] + location[2]), int(location[1] + location[3])
-
-        cv2.rectangle(frame_disp, (x1, y1), (x2, y2), (0, 255, 0), 5)
+        if not segMask:
+            location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
+            x1, y1, x2, y2 = int(location[0]), int(location[1]), int(location[0] + location[2]), int(location[1] + location[3])
+            cv2.rectangle(frame_disp, (x1, y1), (x2, y2), (0, 255, 0), 5)
+        else:
+            frame_disp = state['draw']
 
         font_color = (0, 0, 0)
         cv2.putText(frame_disp, 'Tracking!', (20, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1,
@@ -156,9 +188,9 @@ def track_video(siam_tracker, online_tracker, siam_net, video_path, init_box=Non
             target_sz = np.array([w, h])
 
             state = siam_tracker.init(frame_disp, target_pos, target_sz, siam_net)  # init tracker
-            rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
 
             if args.online:
+                rgb_im = cv2.cvtColor(frame_disp, cv2.COLOR_BGR2RGB)
                 online_tracker.init(frame_disp, rgb_im, siam_net, target_pos, target_sz, True, dataname='VOT2019', resume=args.resume)
 
     # When everything done, release the capture
@@ -190,8 +222,14 @@ def main():
     if siam_info.TRT:
         siam_info.align = False
 
-    siam_tracker = Ocean(siam_info)
-    siam_net = models.__dict__[args.arch](align=siam_info.align, online=args.online)
+    if args.arch == 'Ocean':
+        siam_tracker = Ocean(siam_info)
+        siam_net = models.__dict__[args.arch](align=siam_info.align, online=args.online)
+    elif args.arch == 'OceanPlus':
+        MMS = False
+        siam_tracker = OceanPlus(siam_info)
+        siam_net = models.__dict__[args.arch](online=args.online, mms=MMS)
+
     print('===> init Siamese <====')
 
     if not siam_info.TRT:

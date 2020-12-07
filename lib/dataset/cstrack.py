@@ -599,9 +599,9 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         # Check cache
         #cache_path = str(Path(self.label_files[0]).parent) + '.cache'  # cached labels
         if state == "train":
-            cache_path = "/data/lc/JDE_data/train.cache"
+            cache_path = "./dataset/train.cache"
         if state == "test":
-            cache_path = "/data/lc/JDE_data/val.cache"
+            cache_path = "./dataset/val.cache"
         if os.path.isfile(cache_path):
             cache = torch.load(cache_path)  # load
             if cache['hash'] != get_hash(self.label_files + self.img_files):  # dataset changed

@@ -21,9 +21,10 @@ from torch.optim.lr_scheduler import ExponentialLR, CosineAnnealingLR, ReduceLRO
 import models.models as models
 from utils.utils import create_logger, print_speed, load_pretrain, restore_from, save_model
 from dataset.siamfc import SiamFCDataset
-from core.config import config, update_config
+from core.config_siamdw import config, update_config
 from core.function import siamdw_train
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
 eps = 1e-5
 def parse_args():
     """
@@ -75,22 +76,22 @@ def get_optimizer(cfg, trainable_params):
     get optimizer
     """
 
-    optimizer = torch.optim.SGD(trainable_params, cfg.SIAMFC.TRAIN.LR,
-                    momentum=cfg.SIAMFC.TRAIN.MOMENTUM,
-                    weight_decay=cfg.SIAMFC.TRAIN.WEIGHT_DECAY)
+    optimizer = torch.optim.SGD(trainable_params, cfg.SIAMDW.TRAIN.LR,
+                    momentum=cfg.SIAMDW.TRAIN.MOMENTUM,
+                    weight_decay=cfg.SIAMDW.TRAIN.WEIGHT_DECAY)
 
     return optimizer
 
 
 def lr_decay(cfg, optimizer):
-    if cfg.SIAMFC.TRAIN.LR_POLICY == 'exp':
+    if cfg.SIAMDW.TRAIN.LR_POLICY == 'exp':
         scheduler = ExponentialLR(optimizer, gamma=0.8685)
-    elif cfg.SIAMFC.TRAIN.LR_POLICY == 'cos':
+    elif cfg.SIAMDW.TRAIN.LR_POLICY == 'cos':
         scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs)
-    elif cfg.SIAMFC.TRAIN.LR_POLICY == 'Reduce':
+    elif cfg.SIAMDW.TRAIN.LR_POLICY == 'Reduce':
         scheduler = ReduceLROnPlateau(optimizer, patience=5)
-    elif cfg.SIAMFC.TRAIN.LR_POLICY == 'log':
-        scheduler = np.logspace(math.log10(cfg.SIAMFC.TRAIN.LR), math.log10(cfg.SIAMFC.TRAIN.LR_END), cfg.SIAMFC.TRAIN.END_EPOCH)
+    elif cfg.SIAMDW.TRAIN.LR_POLICY == 'log':
+        scheduler = np.logspace(math.log10(cfg.SIAMDW.TRAIN.LR), math.log10(cfg.SIAMDW.TRAIN.LR_END), cfg.SIAMDW.TRAIN.END_EPOCH)
     else:
         raise ValueError('unsupported learing rate scheduler')
 
@@ -110,7 +111,7 @@ def main():
     args = parse_args()
     reset_config(config, args)
 
-    logger, _, tb_log_dir = create_logger(config, 'SIAMFC', 'train')
+    logger, _, tb_log_dir = create_logger(config, 'SIAMDW', 'train')
     logger.info(pprint.pformat(args))
     logger.info(pprint.pformat(config))
 
@@ -125,25 +126,26 @@ def main():
     try:
         DRIVEID = pretrain_zoo()
 
-        if not os.path.exists('./pretrain/{}'.format(config.SIAMFC.TRAIN.PRETRAIN)):
+        if not os.path.exists('./pretrain/{}'.format(config.SIAMDW.TRAIN.PRETRAIN)):
             os.system(
                 'wget --no-check-certificate \'https://drive.google.com/uc?export=download&id={0}\' -O ./pretrain/{1}'
-                .format(DRIVEID[config.SIAMFC.TRAIN.MODEL], config.SIAMFC.TRAIN.PRETRAIN))
+                .format(DRIVEID[config.SIAMDW.TRAIN.MODEL], config.SIAMDW.TRAIN.PRETRAIN))
     except:
         print('auto-download pretrained model fail, please download it and put it in pretrain directory')
 
 
     # [*] gpus parallel and model prepare
     # prepare
-    model = models.__dict__[config.SIAMFC.TRAIN.MODEL]()  # build model
-    model = load_pretrain(model, './pretrain/{}'.format(config.SIAMFC.TRAIN.PRETRAIN))  # load pretrain
+    model = models.__dict__[config.SIAMDW.TRAIN.MODEL]()  # build model
+
+    model = load_pretrain(model, './pretrain/{}'.format(config.SIAMDW.TRAIN.PRETRAIN))  # load pretrain
     trainable_params = check_trainable(model, logger)           # print trainable params info
     optimizer = get_optimizer(config, trainable_params)         # optimizer
     lr_scheduler = lr_decay(config, optimizer)      # learning rate decay scheduler
 
-    if config.SIAMFC.TRAIN.RESUME and config.SIAMFC.TRAIN.START_EPOCH != 0:   # resume
-        model.features.unfix((config.SIAMFC.TRAIN.START_EPOCH - 1) / config.SIAMFC.TRAIN.END_EPOCH)
-        model, optimizer, args.start_epoch, arch = restore_from(model, optimizer, config.SIAMFC.TRAIN.RESUME)
+    if config.SIAMDW.TRAIN.RESUME and config.SIAMDW.TRAIN.START_EPOCH != 0:   # resume
+        model.features.unfix((config.SIAMDW.TRAIN.START_EPOCH - 1) / config.SIAMDW.TRAIN.END_EPOCH)
+        model, optimizer, args.start_epoch, arch = restore_from(model, optimizer, config.SIAMDW.TRAIN.RESUME)
 
     # parallel
     gpus = [int(i) for i in config.GPUS.split(',')]
@@ -154,13 +156,13 @@ def main():
 
     # [*] train
 
-    for epoch in range(config.SIAMFC.TRAIN.START_EPOCH, config.SIAMFC.TRAIN.END_EPOCH):
+    for epoch in range(config.SIAMDW.TRAIN.START_EPOCH, config.SIAMDW.TRAIN.END_EPOCH):
         # build dataloader, benefit to tracking
         train_set = SiamFCDataset(config)
-        train_loader = DataLoader(train_set, batch_size=config.SIAMFC.TRAIN.BATCH * gpu_num, num_workers=config.WORKERS,
+        train_loader = DataLoader(train_set, batch_size=config.SIAMDW.TRAIN.BATCH * gpu_num, num_workers=config.WORKERS,
                                   pin_memory=True, sampler=None)
 
-        if config.SIAMFC.TRAIN.LR_POLICY == 'log':
+        if config.SIAMDW.TRAIN.LR_POLICY == 'log':
             curLR = lr_scheduler[epoch]
             for param_group in optimizer.param_groups:
                 param_group['lr'] = curLR
@@ -170,7 +172,7 @@ def main():
         model, writer_dict = siamdw_train(train_loader, model, optimizer, epoch + 1, curLR, config, writer_dict, logger)
 
         # save model
-        save_model(model, epoch, optimizer, config.SIAMFC.TRAIN.MODEL, config, isbest=False)
+        save_model(model, epoch, optimizer, config.SIAMDW.TRAIN.MODEL, config, isbest=False)
 
     writer_dict['writer'].close()
 

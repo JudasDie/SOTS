@@ -231,11 +231,11 @@ def siamdw_train(train_loader, model,  optimizer, epoch, cur_lr, cfg, writer_dic
         loss.backward()
         torch.nn.utils.clip_grad_norm(model.parameters(), 10)  # gradient clip
 
-        if is_valid_number(loss.data[0]):
+        if is_valid_number(loss.item()):
             optimizer.step()
 
         # record loss
-        loss = loss.data[0]
+        loss = loss.item()
         losses.update(loss, template.size(0))
         batch_time.update(time.time() - end)
         end = time.time()
@@ -244,7 +244,7 @@ def siamdw_train(train_loader, model,  optimizer, epoch, cur_lr, cfg, writer_dic
             logger.info('Epoch: [{0}][{1}/{2}] lr: {lr:.7f}\t Batch Time: {batch_time.avg:.3f}s \t Data Time:{data_time.avg:.3f}s \t Loss:{loss.avg:.5f}'.format(
                 epoch, iter + 1, len(train_loader), lr=cur_lr, batch_time=batch_time, data_time=data_time, loss=losses))
 
-            print_speed((epoch - 1) * len(train_loader) + iter + 1, batch_time.avg, cfg.SIAMFC.TRAIN.END_EPOCH * len(train_loader), logger)
+            print_speed((epoch - 1) * len(train_loader) + iter + 1, batch_time.avg, cfg.SIAMDW.TRAIN.END_EPOCH * len(train_loader), logger)
 
         # write to tensorboard
         writer = writer_dict['writer']

@@ -20,58 +20,58 @@ config.OUTPUT_DIR = 'logs'
 config.CHECKPOINT_DIR = 'snapshot'
 
 # #-----————- config for siamfc ------------
-config.SIAMFC = edict()
-config.SIAMFC.TRAIN = edict()
-config.SIAMFC.TEST = edict()
-config.SIAMFC.TUNE = edict()
-config.SIAMFC.DATASET = edict()
-config.SIAMFC.DATASET.VID = edict()       # paper utlized but not recommended
-config.SIAMFC.DATASET.GOT10K = edict()    # not utlized in paper but recommended, better performance and more stable
+config.SIAMDW = edict()
+config.SIAMDW.TRAIN = edict()
+config.SIAMDW.TEST = edict()
+config.SIAMDW.TUNE = edict()
+config.SIAMDW.DATASET = edict()
+config.SIAMDW.DATASET.VID = edict()       # paper utlized but not recommended
+config.SIAMDW.DATASET.GOT10K = edict()    # not utlized in paper but recommended, better performance and more stable
 
 # augmentation
-config.SIAMFC.DATASET.SHIFT = 4
-config.SIAMFC.DATASET.SCALE = 0.05
-config.SIAMFC.DATASET.COLOR = 1
-config.SIAMFC.DATASET.FLIP = 0
-config.SIAMFC.DATASET.BLUR = 0
-config.SIAMFC.DATASET.ROTATION = 0
+config.SIAMDW.DATASET.SHIFT = 4
+config.SIAMDW.DATASET.SCALE = 0.05
+config.SIAMDW.DATASET.COLOR = 1
+config.SIAMDW.DATASET.FLIP = 0
+config.SIAMDW.DATASET.BLUR = 0
+config.SIAMDW.DATASET.ROTATION = 0
 
 # vid
-config.SIAMFC.DATASET.VID.PATH = '/home/zhbli/Dataset/data2/vid/crop511'
-config.SIAMFC.DATASET.VID.ANNOTATION = '/home/zhbli/Dataset/data2/vid/train.json'
+config.SIAMDW.DATASET.VID.PATH = '/home/zhbli/Dataset/data2/vid/crop511'
+config.SIAMDW.DATASET.VID.ANNOTATION = '/home/zhbli/Dataset/data2/vid/train.json'
 
 # got10k
-config.SIAMFC.DATASET.GOT10K.PATH = '/home/zhbli/Dataset/data3/got10k/crop511'
-config.SIAMFC.DATASET.GOT10K.ANNOTATION = '/home/zhbli/Dataset/data3/got10k/train.json'
+config.SIAMDW.DATASET.GOT10K.PATH = '/home/zhbli/Dataset/data3/got10k/crop511'
+config.SIAMDW.DATASET.GOT10K.ANNOTATION = '/home/zhbli/Dataset/data3/got10k/train.json'
 
 # train
-config.SIAMFC.TRAIN.MODEL = "SiamFCIncep22"
-config.SIAMFC.TRAIN.RESUME = False
-config.SIAMFC.TRAIN.START_EPOCH = 0
-config.SIAMFC.TRAIN.END_EPOCH = 50
-config.SIAMFC.TRAIN.TEMPLATE_SIZE = 127
-config.SIAMFC.TRAIN.SEARCH_SIZE = 255
-config.SIAMFC.TRAIN.STRIDE = 8
-config.SIAMFC.TRAIN.BATCH = 32
-config.SIAMFC.TRAIN.PAIRS = 200000
-config.SIAMFC.TRAIN.PRETRAIN = 'resnet23_inlayer.model'
-config.SIAMFC.TRAIN.LR_POLICY = 'log'
-config.SIAMFC.TRAIN.LR = 0.001
-config.SIAMFC.TRAIN.LR_END = 0.0000001
-config.SIAMFC.TRAIN.MOMENTUM = 0.9
-config.SIAMFC.TRAIN.WEIGHT_DECAY = 0.0001
-config.SIAMFC.TRAIN.WHICH_USE = 'GOT10K'  # VID or 'GOT10K'
+config.SIAMDW.TRAIN.MODEL = "SiamFCIncep22"
+config.SIAMDW.TRAIN.RESUME = False
+config.SIAMDW.TRAIN.START_EPOCH = 0
+config.SIAMDW.TRAIN.END_EPOCH = 50
+config.SIAMDW.TRAIN.TEMPLATE_SIZE = 127
+config.SIAMDW.TRAIN.SEARCH_SIZE = 255
+config.SIAMDW.TRAIN.STRIDE = 8
+config.SIAMDW.TRAIN.BATCH = 32
+config.SIAMDW.TRAIN.PAIRS = 200000
+config.SIAMDW.TRAIN.PRETRAIN = 'resnet23_inlayer.model'
+config.SIAMDW.TRAIN.LR_POLICY = 'log'
+config.SIAMDW.TRAIN.LR = 0.001
+config.SIAMDW.TRAIN.LR_END = 0.0000001
+config.SIAMDW.TRAIN.MOMENTUM = 0.9
+config.SIAMDW.TRAIN.WEIGHT_DECAY = 0.0001
+config.SIAMDW.TRAIN.WHICH_USE = 'GOT10K'  # VID or 'GOT10K'
 
 # test
-config.SIAMFC.TEST.MODEL = config.SIAMFC.TRAIN.MODEL
-config.SIAMFC.TEST.DATA = 'VOT2015'
-config.SIAMFC.TEST.START_EPOCH = 30
-config.SIAMFC.TEST.END_EPOCH = 50
+config.SIAMDW.TEST.MODEL = config.SIAMDW.TRAIN.MODEL
+config.SIAMDW.TEST.DATA = 'VOT2015'
+config.SIAMDW.TEST.START_EPOCH = 30
+config.SIAMDW.TEST.END_EPOCH = 50
 
 # tune
-config.SIAMFC.TUNE.MODEL = config.SIAMFC.TRAIN.MODEL
-config.SIAMFC.TUNE.DATA = 'VOT2015'
-config.SIAMFC.TUNE.METHOD = 'GENE'  # 'GENE' or 'RAY'
+config.SIAMDW.TUNE.MODEL = config.SIAMDW.TRAIN.MODEL
+config.SIAMDW.TUNE.DATA = 'VOT2015'
+config.SIAMDW.TUNE.METHOD = 'GENE'  # 'GENE' or 'RAY'
 
 # #-----————- config for siamrpn ------------
 config.SIAMRPN = edict()
@@ -182,12 +182,12 @@ def update_config(config_file):
     with open(config_file) as f:
         exp_config = edict(yaml.load(f))
         model_name = list(exp_config.keys())[0]
-        if model_name not in ['SIAMFC', 'SIAMRPN']:
+        if model_name not in ['SIAMDW', 'SIAMRPN']:
             raise ValueError('please edit config.py to support new model')
 
         model_config = exp_config[model_name]  # siamfc or siamrpn
         for k, v in model_config.items():
             if k in config or k in config[model_name]:
-                _update_dict(k, v, model_name)   # k=SIAMFC or SIAMRPN
+                _update_dict(k, v, model_name)   # k=SIAMDW or SIAMRPN
             else:
                 raise ValueError("{} not exist in config.py".format(k))

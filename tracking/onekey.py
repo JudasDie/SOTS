@@ -10,7 +10,7 @@ def parse_args():
     """
     args for onekey.
     """
-    parser = argparse.ArgumentParser(description='Train SiamFC with onekey')
+    parser = argparse.ArgumentParser(description='Train with onekey')
     # for train
     parser.add_argument('--cfg', type=str, default='experiments/train/Ocean.yaml', help='yaml configure file name')
 
@@ -26,39 +26,54 @@ def main():
 
     # train - test - tune information
     info = yaml.load(open(args.cfg, 'r').read())
-    info = info['OCEAN']
+    prefix = args.cfg.split('/')[-1].split('.')[0]
+    prefix2 = prefix.upper()
+
+    info = info[prefix2]
     trainINFO = info['TRAIN']
     testINFO = info['TEST']
     tuneINFO = info['TUNE']
     dataINFO = info['DATASET']
 
+    # parser
+    model_name = trainINFO['MODEL']
+    suffix = model_name.lower()
+    train_log_name = '{}_train.log'.format(suffix)
+    test_log_name = '{}_epoch_test.log'.format(suffix)
+    eval_log_name = '{}_eval_epochs.log'.format(suffix)
+    train_script_name = 'train_{}.py'.format(suffix)
+
+    # some additional arg
+    align = trainINFO['ALIGN'] if model_name == 'Ocean' else False
+    
+
     # epoch training -- train 50 or more epochs
     if trainINFO['ISTRUE']:
         print('==> train phase')
-        print('python ./tracking/train_ocean.py --cfg {0} --gpus {1} --workers {2} 2>&1 | tee logs/ocean_train.log'
-                  .format(args.cfg, info['GPUS'], info['WORKERS']))
+        print('python ./tracking/{0} --cfg {1} --gpus {2} --workers {3} 2>&1 | tee logs/{4}'
+                  .format(train_script_name, args.cfg, info['GPUS'], info['WORKERS'], train_log_name))
 
         if not exists('logs'):
             os.makedirs('logs')
 
-        os.system('python ./tracking/train_ocean.py --cfg {0} --gpus {1} --workers {2} 2>&1 | tee logs/siamrpn_train.log'
-                  .format(args.cfg, info['GPUS'], info['WORKERS']))
+        os.system('python ./tracking/{0} --cfg {1} --gpus {2} --workers {3} 2>&1 | tee logs/{4}'
+                  .format(train_script_name, args.cfg, info['GPUS'], info['WORKERS'], train_log_name))
 
     # epoch testing -- test 30-50 epochs (or more)
     if testINFO['ISTRUE']:
         print('==> test phase')
         print('mpiexec -n {0} python ./tracking/test_epochs.py --arch {1} --start_epoch {2} --end_epoch {3} --gpu_nums={4} \
-                  --threads {0} --dataset {5}  --align {6} 2>&1 | tee logs/ocean_epoch_test.log'
+                  --threads {0} --dataset {5}  --align {6} 2>&1 | tee logs/{7}'
                   .format(testINFO['THREADS'], trainINFO['MODEL'], testINFO['START_EPOCH'], testINFO['END_EPOCH'],
-                          (len(info['GPUS']) + 1) // 2, testINFO['DATA'], trainINFO['ALIGN']))
+                          (len(info['GPUS']) + 1) // 2, testINFO['DATA'], align, test_log_name))
 
         if not exists('logs'):
             os.makedirs('logs')
 
         os.system('mpiexec -n {0} python ./tracking/test_epochs.py --arch {1} --start_epoch {2} --end_epoch {3} --gpu_nums={4} \
-                  --threads {0} --dataset {5}  --align {6} 2>&1 | tee logs/ocean_epoch_test.log'
+                  --threads {0} --dataset {5}  --align {6} 2>&1 | tee logs/{7}'
                   .format(testINFO['THREADS'], trainINFO['MODEL'], testINFO['START_EPOCH'], testINFO['END_EPOCH'],
-                          (len(info['GPUS']) + 1) // 2, testINFO['DATA'], trainINFO['ALIGN']))
+                          (len(info['GPUS']) + 1) // 2, testINFO['DATA'], align, test_log_name))
 
         # test on vot or otb benchmark
         print('====> use new testing toolkit')
@@ -66,7 +81,9 @@ def main():
         trackers = " ".join(trackers)
         if 'VOT' in testINFO['DATA']:
             print('python lib/eval_toolkit/bin/eval.py --dataset_dir dataset --dataset {0} --tracker_result_dir result/{0} --trackers {1}'.format(testINFO['DATA'], trackers))
-            os.system('python lib/eval_toolkit/bin/eval.py --dataset_dir dataset --dataset {0} --tracker_result_dir result/{0} --trackers {1} 2>&1 | tee logs/ocean_eval_epochs.log'.format(testINFO['DATA'], trackers))
+            os.system('python lib/eval_toolkit/bin/eval.py --dataset_dir dataset --dataset {0} --tracker_result_dir result/{0} --trackers {1} 2>&1 | tee logs/{3}'.format(testINFO['DATA'], trackers, eval_log_name))
+        elif 'OTB' in testINFO['DATA']:
+            os.system('python ./lib/core/eval_otb.py {0} ./result {1}* 0 1000'.format(testINFO['DATA'], prefix))
         else:
             raise ValueError('not supported now, please add new dataset')
 

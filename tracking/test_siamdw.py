@@ -17,7 +17,7 @@ from tracker.siamfc import SiamFC
 from easydict import EasyDict as edict
 from utils.utils import load_pretrain, cxy_wh_2_rect, get_axis_aligned_bbox, load_dataset, poly_iou
 # for GENE tuning
-from lib.core.eval_otb import eval_auc_tune
+from core.eval_otb import eval_auc_tune
 from eval_toolkit.pysot.datasets import VOTDataset
 from eval_toolkit.pysot.evaluation import EAOBenchmark
 

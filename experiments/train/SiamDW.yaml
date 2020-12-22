@@ -1,15 +1,15 @@
-SIAMFC:
-  GPUS: '0,1,2,3'
+SIAMDW:
+  GPUS: '0,1'
   PRINT_FREQ: 10
-  WORKERS: 32
+  WORKERS: 8
   OUTPUT_DIR: 'logs'   # log file
   CHECKPOINT_DIR: 'snapshot'   # checkpoint file
 
   TRAIN:
-    ISTRUE: True   # whether to train
+    ISTRUE: False   # whether to train
     MODEL: "SiamDW"   # SiamFCIncep22, SiamFCNext22
     START_EPOCH: 0
-    END_EPOCH: 50
+    END_EPOCH: 20
     TEMPLATE_SIZE: 127
     SEARCH_SIZE: 255
     STRIDE: 8
@@ -24,9 +24,9 @@ SIAMFC:
   TEST:    # TEST model is same as TRAIN.MODEL
     ISTRUE: True  # whether to test
     THREADS: 16   # multi threads test
-    DATA: 'VOT2017'
-    START_EPOCH: 30
-    END_EPOCH: 50
+    DATA: 'OTB2013'
+    START_EPOCH: 5
+    END_EPOCH: 20
   TUNE:    # TUNE model is same as TRAIN.MODEL
     ISTRUE: False  # whether to tune
     DATA: 'VOT2017'

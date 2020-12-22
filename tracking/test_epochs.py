@@ -5,7 +5,7 @@ from mpi4py import MPI
 
 
 parser = argparse.ArgumentParser(description='multi-gpu test all epochs')
-parser.add_argument('--arch', dest='arch', default='SiamFCIncep22',
+parser.add_argument('--arch', dest='arch', default='SiamDW',
                     help='architecture of model')
 parser.add_argument('--start_epoch', default=30, type=int, required=True, help='test end epoch')
 parser.add_argument('--end_epoch', default=50, type=int, required=True,
@@ -21,7 +21,7 @@ args = parser.parse_args()
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
-GPU_ID = rank % args.gpu_nums
+GPU_ID = rank % args.gpu_nums + 3
 node_name = MPI.Get_processor_name()  # get the name of the node
 os.environ['CUDA_VISIBLE_DEVICES'] = str(GPU_ID)
 print("node name: {}, GPU_ID: {}".format(node_name, GPU_ID))
@@ -41,4 +41,8 @@ for i in range(2):
 
     resume = 'snapshot/checkpoint_e{}.pth'.format(epoch_ID)
     print('==> test {}th epoch'.format(epoch_ID))
-    os.system('python ./tracking/test_ocean.py --arch {0} --resume {1} --dataset {2} --align {3} --epoch_test True'.format(arch, resume, dataset, args.align))
+
+    if arch == 'Ocean':
+        os.system('python ./tracking/test_ocean.py --arch {0} --resume {1} --dataset {2} --align {3} --epoch_test True'.format(arch, resume, dataset, args.align))
+    elif arch == 'SiamDW':
+        os.system('python ./tracking/test_siamdw.py --arch {0} --resume {1} --dataset {2} --epoch_test True'.format(arch, resume, dataset))

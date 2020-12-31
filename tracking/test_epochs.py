@@ -21,7 +21,7 @@ args = parser.parse_args()
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
-GPU_ID = rank % args.gpu_nums + 3
+GPU_ID = rank % args.gpu_nums
 node_name = MPI.Get_processor_name()  # get the name of the node
 os.environ['CUDA_VISIBLE_DEVICES'] = str(GPU_ID)
 print("node name: {}, GPU_ID: {}".format(node_name, GPU_ID))

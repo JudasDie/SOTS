@@ -203,7 +203,7 @@ Set the dataset path in line2 of `$SOTS/lib/dataset/mot/cfg/*.json`.
 
 2. run
 ```
-python train.py --batch_size 8 --device 0 --weights $SOTS/weights/yolov5l.pt --epochs 30 --data ../lib/dataset/mot/cfg/data_ch.json #train on all datasets
+python train_cstrack.py --batch_size 8 --device 0 --weights $SOTS/weights/yolov5l.pt --epochs 30 --data ../lib/dataset/mot/cfg/data_ch.json #train on all datasets
                                                                                                 ../lib/dataset/mot/cfg/data.json #train on datasets like JDE
                                                                                                 ../lib/dataset/mot/cfg/mot17.json #train on MOT17 training set
                                                                                                 ../lib/dataset/mot/cfg/mot17_hf.json #train on the half of MOT17 training set

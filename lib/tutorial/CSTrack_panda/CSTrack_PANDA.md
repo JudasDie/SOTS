@@ -68,7 +68,7 @@ python train_cstrack_panda.py --device 0,1 --batch_size 32
 
 ## Docker
 
-This is our docker implementation for [PANDA competition](https://tianchi.aliyun.com/competition/entrance/531855/introduction) 
+This is our docker implementation for PANDA competition
 
 1. Install curl and docker 
 

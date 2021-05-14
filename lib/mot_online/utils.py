@@ -105,7 +105,7 @@ def scale_coords(img_size, coords, img0_shape):
     coords[:, [0, 2]] -= pad_x
     coords[:, [1, 3]] -= pad_y
     coords[:, 0:4] /= gain
-    coords[:, :4] = torch.clamp(coords[:, :4], min=0)
+    # coords[:, :4] = torch.clamp(coords[:, :4], min=0)
     return coords
 
 

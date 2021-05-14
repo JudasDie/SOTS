@@ -41,7 +41,7 @@ mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True               
 
 **Note:** We provide model fusion between detection results  of CSTrack  and other detection results  such as yolov5.
 
-[**yolov5_panda**](https://github.com/JudasDie/SOTS/edit/master/lib/tutorial/CSTrack_panda/yolov5_PANDA.md) will produce extra detection results, and `--det_results ../yolov5_panda` acquires the yolov5 detection results. You can fuse detection results of other detectors for further model fusion.  (if you only want to test CSTrack, please ignore the argument `--det_results ../yolov5_panda` )
+[**yolov5_panda**](https://github.com/JudasDie/SOTS/edit/master/lib/tutorial/CSTrack_panda/YOLOV5_PANDA.md) will produce extra detection results, and `--det_results ../yolov5_panda` acquires the yolov5 detection results. You can fuse detection results of other detectors for further model fusion.  (if you only want to test CSTrack, please ignore the argument `--det_results ../yolov5_panda` )
 
 ## Training
 

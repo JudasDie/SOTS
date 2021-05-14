@@ -2,7 +2,7 @@
 
 This is a repo for [PANDA (Gigapixel-Level Human-Centric Video Dataset) competition](https://tianchi.aliyun.com/competition/entrance/531855/introduction)
 
-We assume the root path is **$SOTS**, e.g. `/home/chaoliang/SOTS`
+We assume the root path is **$SOTS**, e.g., `/home/chaoliang/SOTS`
 
 ## Set up environment
 

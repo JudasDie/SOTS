@@ -31,7 +31,12 @@ pip install -r requirements.txt
 ```bash
 cd $SOTS/tracking
 # "--vis_state 1" denotes visualization of detection results 
-mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True --det_results ../yolov5_panda --nms_thres 0.5 --conf_thres 0.5 --weights ../weights/cstrack_panda.pt  --vis_state 1 
+mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \  
+                                                --det_results ../yolov5_panda         \
+                                                --nms_thres 0.5                       \   
+                                                --conf_thres 0.5                      \
+                                                --weights ../weights/cstrack_panda.pt \
+                                                --vis_state 1 
 ```
 
 **Note:** We provide model fusion between detection results  of CSTrack  and other detection results  such as yolov5.
@@ -56,10 +61,7 @@ cd $SOTS/lib/utils/panda
 python label_clean.py
 mpirun -np 12 python split.py
 ```
-
-### Training
-
-#### For  CSTrack_panda training
+### For  CSTrack_panda training
 
 ```
 cd $SOTS/tracking

@@ -30,7 +30,9 @@ pip install -r requirements.txt
 
 ```bash
 cd $SOTS/yolov5_panda
-mpirun -np 1 python detect_mpi.py --iou_thres 0.5 --conf_thres 0.4 --weights weights/yolov5_panda.pt 
+mpirun -np 1 python detect_mpi.py --iou_thres 0.5  \
+                                  --conf_thres 0.4 \
+                                  --weights weights/yolov5_panda.pt 
 ```
 
 ## Training
@@ -50,9 +52,7 @@ python label_clean.py
 mpirun -np 2 python split_det.py
 ```
 
-### Training
-
-#### For yolov5_panda training
+### For yolov5_panda training
 
 ```bash
 cd $SOTS/yolov5_panda

@@ -1,59 +1,26 @@
 # Single/Multiple Object Tracking and Segmentation
 
-### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS), and multiple object tracking (MOT).
+### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
-:boom: The version of [CSTrack_panda](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md) has been released. It is a strong baseline for [Gigavison](http://gigavision.cn/index.html) MOT tracking.
-
-:boom: Code and paper for MOT tracker [CSTrack](https://arxiv.org/abs/2010.12138) has been released.
-
-:boom: **Repo Init:** Official implementation of [OceanPlus]() is uploaded. [OceanPlus](), [Ocean]() and [SiamDW]() are supported now. 
+:boom: The improved version of [CSTrack_panda](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md) has been released, containing the end-to-end tranining codes on PANDA. It is a strong baseline for [Gigavison](http://gigavision.cn/index.html) MOT tracking. Our tracker is in the **Top10** methods of **Tianchi Global AI Competition (天池—全球人工智能技术创新大赛[赛道二])**, with the score of **A-0.67/B-0.625 (AB榜)**, which surprisingly outperforms the baseline tracker JDE with score of A-0.32/B-0.34.
 
 ## Supported Trackers (SOT and MOT)
 
 ### Single-Object Tracking (SOT)
+- [x] [**[ECCV2020] Ocean and Ocean+**](https://arxiv.org/abs/2006.10721)
+- [x] [**[CVPR2019 Oral] SiamDW**](http://openaccess.thecvf.com/content_CVPR_2019/html/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.html)
 
-- [x] [**OceanPlus**]()
-- [x] [**Ocean**]()
-- [x] [**SiamDW**]()
-- [ ] [**SiamMask**]()
-- [ ] [**SiamRPN++**]()
-- [ ] [**SiamFC++**]()
-- [ ] [**SiamFC**]()
-- [ ] [**ATOM**]()
-- [ ] [**DiMP**]() 
-- [ ] [**PrDiMP**]()
-- [ ] [**KYS**]()
-- [ ] [**LWL**]()
-- [ ] [**SiamBAN**]()
-- [ ] [**SiamAttn**]()
 
 ### Multi-Object Tracking (MOT)
-- [x] [**CSTrack**](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack/cstrack.md)
+- [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138)
+- [ ] [**SiamMOT or CSTrackv2**](https://arxiv.org/pdf/2104.09441)(on the schedule...)
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)
 
-## Talks about VOT and VOTS (video)
-
-[**[SiamFC]**](https://www.bilibili.com/video/BV1ck4y1B7Yv?from=search&seid=15454527879078953284)[**[SiamRPN series]**](https://www.bilibili.com/video/BV1tJ411K7iQ?from=search&seid=16794822988427286264)[**[SiamDW]**](https://www.bilibili.com/video/BV1ut411L7Ru?from=search&seid=8271716311900472376)[**[SiamMask]**](https://www.bilibili.com/video/BV1Kt411u7CT?from=search&seid=684552033902530378)[**[ATOM]**](https://www.bilibili.com/video/BV1Lt411n7mK?from=search&seid=8307889874986411460)[**[Ocean]**](https://www.bilibili.com/video/BV1354y1e7wU?from=search&seid=15378680533874208460)[**[SiamBAN]**](https://www.youtube.com/watch?v=HW61L2GI7Kc)
-
-## Achievements of the related trackers
-- SiamRPN and its variants achieve VOT2018-RT winner.
-- SiamDW-T achieves runner-up of VOT2019-RGBT and 1st of VOT2020 RGBT (re-submitted by the committee).
-- OceanPlus and its variants achieve the runner-ups for both VOT2020-ST and VOT2020-RT.
-
 
 ## Tracker Details
-### OceanPlus [Arxiv now]
-**[[Paper]]() [[Raw Results]]() [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/OceanPlus/oceanplus.md) [[Demo]]()** <br/>
-Official implementation of the OceanPlus tracker. It proposes an attention retrieval network (ARN) to perform soft spatial constraints on backbone features. Concretely, we first build a look-up-table (LUT) with the ground-truth mask in the starting frame, and then retrieve the LUT to obtain a target-aware attention map for suppressing the negative influence of background clutter. Furthermore, we introduce a multi-resolution multi-stage segmentation network (MMS) to ulteriorly weaken responses of background clutter by reusing the predicted mask to filter backbone features.
-
-
-</div>
-<img src="https://github.com/JudasDie/SOTS/blob/master/demo/oceanplu_overview.png"  alt="OceanPlus"/><br/>
-</div>
-
 ### Ocean [ECCV2020]
 **[[Paper]](https://arxiv.org/abs/2006.10721) [[Raw Results]](https://drive.google.com/file/d/1vDp4MIkWzLVOhZ-Yt2Zdq8Z_Z0rz6y0R/view?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/Ocean/ocean.md) [[Demo]](https://www.youtube.com/watch?v=83-XCEsQ1Kg&feature=youtu.be)** <br/>
 
@@ -68,6 +35,16 @@ Ocean proposes a general anchor-free based tracking framework. It includes a pix
 SiamDW is one of the pioneering work using deep backbone networks for Siamese tracking framework. Based on sufficient analysis on network depth, output size, receptive field and padding mode, we propose guidelines to build backbone networks for Siamese tracker. Several deeper and wider networks are built following the guidelines with the proposed CIR module. 
 
 <img src="https://github.com/JudasDie/SOTS/blob/master/demo/siamdw_overview.jpg" height="250" alt="SiamDW"/><br/>
+
+### OceanPlus [Arxiv now]
+**[[Paper]]() [[Raw Results]]() [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/OceanPlus/oceanplus.md) [[Demo]]()** <br/>
+Official implementation of the OceanPlus tracker. It proposes an attention retrieval network (ARN) to perform soft spatial constraints on backbone features. Concretely, we first build a look-up-table (LUT) with the ground-truth mask in the starting frame, and then retrieve the LUT to obtain a target-aware attention map for suppressing the negative influence of background clutter. Furthermore, we introduce a multi-resolution multi-stage segmentation network (MMS) to ulteriorly weaken responses of background clutter by reusing the predicted mask to filter backbone features.
+
+
+</div>
+<img src="https://github.com/JudasDie/SOTS/blob/master/demo/oceanplu_overview.png"  alt="OceanPlus"/><br/>
+</div>
+
 
 ### CSTrack [Arxiv now]
 **[[Paper]](https://arxiv.org/abs/2010.12138) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack/cstrack.md) [[Demo]](https://motchallenge.net/method/MOT=3601&chl=10)** <br/>
@@ -118,7 +95,7 @@ $TrackSeg
 ...
 ```
 ## Contributors
-- **[Zhipeng Zhang](https://github.com/JudasDie)**
+- **[Zhipeng Zhang](http://zhipengzhang.cn/)**
 - **[Chao Liang](https://github.com/H11zang)**
 
 

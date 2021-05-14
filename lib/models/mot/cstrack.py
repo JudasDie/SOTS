@@ -34,6 +34,7 @@ class Detect(nn.Module):
                                nn.Conv2d(ch[1], (self.no) * self.na, 1),
                                nn.Conv2d(ch[2], (self.no) * self.na, 1)])  # output conv
         self.export = False  # onnx export
+        self.k = Parameter(torch.ones(1) * 10)
 
     def forward(self, x):
         # x = x.copy()  # for profiling
@@ -49,19 +50,37 @@ class Detect(nn.Module):
                     self.grid[i] = self._make_grid(nx, ny).to(x[i].device)
 
                 y = x[i].sigmoid()
-                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * self.stride[i]  # xy
+                if self.k[0] == 10:
+                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * self.stride[i]  # xy
+                else:
+                    y[..., 0:2] = ((y[..., 0:2] - 0.5) * self.k + self.grid[i].to(x[i].device)) * self.stride[i]  # xy
                 y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
                 y = y[..., :6]
                 z.append(y.view(bs, -1, self.no))
 
         #return [x[0][...,6:],x] if self.training else [x[0][...,6:],(torch.cat(z, 1), x)]
-        return x if self.training else (torch.cat(z, 1), x)
+        return [x,self.k] if self.training else (torch.cat(z, 1), [x,self.k])
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
         yv, xv = torch.meshgrid([torch.arange(ny), torch.arange(nx)])
         return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float()
 
+
+class DenseMask(nn.Module):
+    def __init__(self,mask=1,ch=()):
+        super(DenseMask, self).__init__()
+        self.proj1 = Conv(ch[0]//2, 1,k=3)
+        self.proj2 = nn.ConvTranspose2d(ch[1], 1, 4, stride=2,
+                                                     padding=1, output_padding=0,
+                                                     groups=1, bias=False)
+        self.proj3 = nn.ConvTranspose2d(ch[2], 1, 8, stride=4,
+                                                     padding=2, output_padding=0,
+                                                     groups=1, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, layers):
+        return self.sigmoid(self.proj1(layers[0][0])+self.proj2(layers[1][0])+self.proj3(layers[2][0]))
 
 class SAAN(nn.Module):
     def __init__(self,id_embedding=256,ch=()):
@@ -155,27 +174,7 @@ class SAAN_Attention(nn.Module):
             y = x
         return y
 
-'''
-class ID_jde(nn.Module):
-    def __init__(self,id_embedding=256,ch=()):
-        super(ID_jde, self).__init__()
-        self.proj1 = nn.Conv2d(ch[0]//2, id_embedding, 1)
-        self.proj2 = nn.Conv2d(ch[1], id_embedding, 1)
-        self.proj3 = nn.Conv2d(ch[2], id_embedding, 1)
 
-
-    def forward(self, layers):
-        y_8 = self.proj1(layers[0][1])
-        y_16 = self.proj2(layers[1][1])
-        y_32 = self.proj3(layers[2][1])
-        #y_8 = self.proj1(layers[0])
-        #y_16 = self.proj2(layers[1])
-        #y_32 = self.proj3(layers[2])
-        y_8 = y_8.permute(0, 2, 3, 1).contiguous()
-        y_16 = y_16.permute(0, 2, 3, 1).contiguous()
-        y_32 = y_32.permute(0, 2, 3, 1).contiguous()
-        return y_8
-'''
 
 class CCN(nn.Module):
     def __init__(self,k_size = 3,ch=()):
@@ -265,7 +264,7 @@ class Model(nn.Module):
         if isinstance(m, Detect):
             s = 128  # 2x min stride
             x = self.forward(torch.zeros(2, ch, s, s))
-            m.stride = torch.tensor([s / x.shape[-2] for x in x[1]])  # forward
+            m.stride = torch.tensor([s / x.shape[-2] for x in x[-1][0]])  # forward
             m.anchors /= m.stride.view(-1, 1, 1)
             check_anchor_order(m)
             self.stride = m.stride
@@ -415,6 +414,9 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[1] = [list(range(args[1] * 2))] * len(f)
             out_list += [i]
         elif m is SAAN:
+            out_list += [i]
+            args.append([ch[x + 1] for x in f])
+        elif m is DenseMask:
             out_list += [i]
             args.append([ch[x + 1] for x in f])
         else:

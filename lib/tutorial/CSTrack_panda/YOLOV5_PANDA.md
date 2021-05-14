@@ -6,7 +6,7 @@ We assume the root path is **$SOTS**, e.g., `/home/chaoliang/SOTS`
 
 ## Set up environment
 
-If you have set up environment according to **CSTrack_PANDA tutorial**, please skip here. 
+If you have set up environment according to **[CSTrack_PANDA tutorial](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md)**, please skip here. 
 
 ```bash
 conda create -n CSTrack python=3.8

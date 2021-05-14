@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ### Prepare data and models
 
 1. Download the **CSTrack model**[[Baidu NetDisk(8m67)]](https://pan.baidu.com/s/1mlivPz3hyPENLTeJxMfjjQ) trained on all tianchi-PANDA datasets to `$SOTS/weights`
-2. Download  parts of **tianchi-PANDA datasets**[[Baidu NetDisk(ecxm)]](https://pan.baidu.com/s/1yVl-fHxyF7mhDYwsmdNTUA)  to`$SOTS/tcdata`, e.g., `$SOTS/tcdata/panda_round2_train_20210331_part10`
+2. Download  parts of **tianchi-PANDA datasets**[[Baidu NetDisk(ecxm)]](https://pan.baidu.com/s/1yVl-fHxyF7mhDYwsmdNTUA)  to`$SOTS/tcdata`, e.g.,`$SOTS/tcdata/panda_round2_train_20210331_part10`
 
 ### Inference
 

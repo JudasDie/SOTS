@@ -1,0 +1,15 @@
+{
+    "root":"../",
+    "train":
+    {
+        "panda_train":"../data/panda.train"
+    },
+    "test_emb":
+    {
+        "panda_train":"../data/panda.val"
+    },
+    "test":
+    {
+        "panda_train":"../data/panda.val"
+    }
+}

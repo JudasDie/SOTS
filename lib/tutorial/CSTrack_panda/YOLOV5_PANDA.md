@@ -2,7 +2,7 @@
 
 This is a repo for [PANDA(Gigapixel-Level Human-Centric Video Dataset) competition](https://tianchi.aliyun.com/competition/entrance/531855/introduction)
 
-We assume the root path is **$SOTS**, e.g. `/home/chaoliang/SOTS`
+We assume the root path is **$SOTS**, e.g., `/home/chaoliang/SOTS`
 
 ## Set up environment
 
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ### Prepare data and models
 
 1. Download the **yolov5 model**[[Baidu NetDisk(q8j9)](https://pan.baidu.com/s/1lqByflTMAdhgYUzjW4Fr5g)] trained on tianchi-PANDA preliminary competition datasets to `$SOTS/yolov5_panda/weights`
-2. Download the **PANDA datasets**[[Baidu NetDisk(ecxm)]](https://pan.baidu.com/s/1yVl-fHxyF7mhDYwsmdNTUA)  to `$SOTS/tcdata`. e.g. `$SOTS/tcdata/panda_round2_train_20210331_part10`
+2. Download the **PANDA datasets**[[Baidu NetDisk(ecxm)]](https://pan.baidu.com/s/1yVl-fHxyF7mhDYwsmdNTUA)  to `$SOTS/tcdata`, e.g., `$SOTS/tcdata/panda_round2_train_20210331_part10`
 
 ### Inference
 

@@ -3,6 +3,8 @@
 ### Codes and comparison of recent single object tracking and segmentation (VOT and VOTS), and multiple object tracking (MOT).
 
 ## News
+:boom: The version of [CSTrack_panda](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md) has been released. It is a strong baseline for [Gigavison](http://gigavision.cn/index.html) MOT tracking.
+
 :boom: Code and paper for MOT tracker [CSTrack](https://arxiv.org/abs/2010.12138) has been released.
 
 :boom: **Repo Init:** Official implementation of [OceanPlus]() is uploaded. [OceanPlus](), [Ocean]() and [SiamDW]() are supported now. 

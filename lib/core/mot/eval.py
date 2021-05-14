@@ -103,7 +103,7 @@ def test(data,
         with torch.no_grad():
             # Run model
             t = time_synchronized()
-            inf_out, train_out = model(img, augment=augment)[1]  # inference and training outputs
+            inf_out, train_out = model(img, augment=augment)[-1]  # inference and training outputs
 
             
             t0 += time_synchronized() - t

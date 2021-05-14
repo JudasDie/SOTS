@@ -57,7 +57,6 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False):
         b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
         b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
 
-
     # Intersection area
     inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
             (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
@@ -158,70 +157,6 @@ class BCEBlurWithLogitsLoss(nn.Module):
         loss *= alpha_factor
         return loss.mean()
 
-
-def compute_loss(p, targets, model):  # predictions, targets, model
-    device = targets.device
-    lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
-    tcls, tbox, indices, anchors = build_targets(p, targets, model)  # targets
-    h = model.hyp  # hyperparameters
-
-    # Define criteria
-    BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['cls_pw']])).to(device)
-    BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([h['obj_pw']])).to(device)
-
-    # Class label smoothing https://arxiv.org/pdf/1902.04103.pdf eqn 3
-    cp, cn = smooth_BCE(eps=0.0)
-
-    # Focal loss
-    g = h['fl_gamma']  # focal loss gamma
-    if g > 0:
-        BCEcls, BCEobj = FocalLoss(BCEcls, g), FocalLoss(BCEobj, g)
-
-    # Losses
-    nt = 0  # number of targets
-    np = len(p)  # number of outputs
-    balance = [4.0, 1.0, 0.4] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
-    for i, pi in enumerate(p):  # layer index, layer predictions
-        b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
-        tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
-
-        n = b.shape[0]  # number of targets
-        if n:
-            nt += n  # cumulative targets
-            ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
-
-            # Regression
-            pxy = ps[:, :2].sigmoid() * 2. - 0.5
-            pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
-            pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
-            giou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
-            lbox += (1.0 - giou).mean()  # giou loss
-
-            # Objectness
-            tobj[b, a, gj, gi] = (1.0 - model.gr) + model.gr * giou.detach().clamp(0).type(tobj.dtype)  # giou ratio
-
-            # Classification
-            if model.nc > 1:  # cls loss (only if multiple classes)
-                t = torch.full_like(ps[:, 5:], cn, device=device)  # targets
-                t[range(n), tcls[i]] = cp
-                lcls += BCEcls(ps[:, 5:], t)  # BCE
-
-            # Append targets to text file
-            # with open('targets.txt', 'a') as file:
-            #     [file.write('%11.5g ' * 4 % tuple(x) + '\n') for x in torch.cat((txy[i], twh[i]), 1)]
-
-        lobj += BCEobj(pi[..., 4], tobj) * balance[i]  # obj loss
-
-    s = 3 / np  # output count scaling
-    lbox *= h['giou'] * s
-    lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
-    lcls *= h['cls'] * s
-    bs = tobj.shape[0]  # batch size
-
-    loss = lbox + lobj + lcls
-    return loss * bs, torch.cat((lbox, lobj, lcls, loss)).detach()
-
-
 def build_targets(p, targets, model):
     # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
     det = model.module.model[-1] if is_parallel(model) else model.model[-1]  # Detect() module
@@ -241,7 +176,6 @@ def build_targets(p, targets, model):
     for i in range(det.nl):
         anchors = det.anchors[i]
         gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
-
         # Match targets to anchors
         t = targets * gain
 
@@ -251,10 +185,14 @@ def build_targets(p, targets, model):
         gwh = t[0][:, 4:6]  # grid wh
         gij = gxy.long()
         gi, gj = gij.T  # grid xy indices
+        gj[gj>=int(gain[3])] = int(gain[3])-1
+        gj[gj < 0] = 0
+        gi[gi>=int(gain[2])] = int(gain[2])-1
+        gi[gi < 0] = 0
+
         # Append
         indices_id.append((b, gj, gi))  # image, anchor, grid indices
         tids.append(c)  # class
-
 
 
         if nt:
@@ -282,14 +220,16 @@ def build_targets(p, targets, model):
         gwh = t[:, 4:6]  # grid wh
         gij = (gxy - offsets).long()
         gi, gj = gij.T  # grid xy indices
-
+        gj[gj>=int(gain[3])] = int(gain[3])-1
+        gj[gj < 0] = 0
+        gi[gi>=int(gain[2])] = int(gain[2])-1
+        gi[gi < 0] = 0
         # Append
         a = t[:, 6].long()  # anchor indices
         indices.append((b, a, gj, gi))  # image, anchor, grid indices
         tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
         anch.append(anchors[a])  # anchors
         tcls.append(c)  # class
-
     return tcls, tbox, indices, anch, indices_id, tids
 
 
@@ -300,9 +240,10 @@ class MotLoss(torch.nn.Module):
         self.nID = nID
         self.emb_dim = emb_dim
         #bnneck
-        self.bottleneck = nn.BatchNorm1d(self.emb_dim).cuda()
-        self.bottleneck.bias.requires_grad_(False)
+        #self.bottleneck = nn.BatchNorm1d(self.emb_dim).cuda()
+        #self.bottleneck.bias.requires_grad_(False)
         self.classifier = nn.Linear(self.emb_dim, self.nID, bias=False).cuda()
+        self.denseMloss = nn.MSELoss(reduce=True, size_average=True).cuda()
         self.IDLoss_zero = nn.CrossEntropyLoss(ignore_index=0).cuda()
         self.IDLoss = CrossEntropyLabelSmooth(self.nID).cuda()
         if self.nID == 1:
@@ -310,11 +251,12 @@ class MotLoss(torch.nn.Module):
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
 
 
-    def forward(self,output, targets, model):
-        id_embeding, p = output[0], output[1][0]
+    def forward(self,output, targets, densemask_T, model):
+        id_embeding, denseMask, p = output[0], output[1], output[2][0]
+        w_k = output[2][1]
         device = targets.device
-        lcls, lbox, lobj,id_loss, lrep, lrep0 = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device),\
-                                                torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
+        lcls, lbox, lobj,id_loss,dmloss = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device),\
+                                                torch.zeros(1, device=device), torch.zeros(1, device=device)
         tcls, tbox, indices, anchors, indices_id, tids = build_targets(p, targets, model)  # targets
         h = model.hyp  # hyperparameters
 
@@ -347,9 +289,9 @@ class MotLoss(torch.nn.Module):
 
                 ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets
 
-
                 # Regression
-                pxy = ps[:, :2].sigmoid() * 2. - 0.5
+                #pxy = ps[:, :2].sigmoid() * 2. - 0.5
+                pxy = (ps[:, :2].sigmoid()-0.5) * w_k[0]
                 pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
                 pbox = torch.cat((pxy, pwh), 1).to(device)  # predicted box
                 giou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # giou(prediction, target)
@@ -399,8 +341,9 @@ class MotLoss(torch.nn.Module):
         lobj *= h['obj'] * s * (1.4 if np == 4 else 1.)
         lcls *= h['cls'] * s
         bs = tobj.shape[0]  # batch size
-        #lrep = (lrep + lrep0) / 8
-
+        denseMask = denseMask.squeeze(dim=1)
+        dmloss = self.denseMloss(densemask_T.float(), denseMask.float())
+        dmloss = dmloss.unsqueeze(dim=0)
         # 0.02 for s_id is good for only mot17
-        loss = lbox + lobj + id_loss*self.s_id
-        return loss * bs, torch.cat((lbox,id_loss,lobj, loss)).detach()
+        loss = lbox + lobj + id_loss*self.s_id + dmloss
+        return loss * bs, torch.cat((lbox,id_loss,dmloss,lobj,loss)).detach()

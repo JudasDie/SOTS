@@ -82,21 +82,39 @@ def cluster_nms(boxes, scores, iou_threshold: float = 0.5, top_k: int = 200):
     idx_out = idx[maxA <= iou_threshold]
     return idx_out
 
-def cluster_diounms(boxes, scores, iou_threshold: float = 0.5, top_k: int = 200):
+def cluster_diounms(boxes, scores, iou_threshold: float = 0.5,dense_mask=[], top_k: int = 200):
     # Collapse all the classes into 1
     _, idx = scores.sort(0, descending=True)
     #idx = idx[:top_k]
     boxes_idx = boxes[idx]
     iou = diou(boxes_idx, boxes_idx,delta = 0.7).triu_(diagonal=1)
     B = iou
+    if len(dense_mask) != 0:
+        x_inds = (boxes_idx[:, 0] + boxes_idx[:, 2]) // 16
+        y_inds = (boxes_idx[:, 1] + boxes_idx[:, 3]) // 16
+        y_inds[y_inds >= 76] = 75
+        y_inds[y_inds < 0] = 0
+        x_inds[x_inds >= 136] = 135
+        x_inds[x_inds < 0] = 0
+        x_inds = x_inds.cpu().numpy().astype(np.int16).tolist()
+        y_inds = y_inds.cpu().numpy().astype(np.int16).tolist()
+        dense_mask = dense_mask.squeeze(dim=0).squeeze(dim=0)
+        dense_mask = dense_mask[y_inds, x_inds].cuda()
+        dense_mask[dense_mask <= iou_threshold] = iou_threshold
     for i in range(200):
         A = B
         maxA, _ = torch.max(A, dim=0)
-        E = (maxA <= iou_threshold).float().unsqueeze(1).expand_as(A)
+        if len(dense_mask) != 0:
+            E = (torch.lt(maxA,dense_mask)).float().unsqueeze(1).expand_as(A)
+        else:
+            E = (torch.lt(maxA, iou_threshold)).float().unsqueeze(1).expand_as(A)
         B = iou.mul(E)
         if A.equal(B) == True:
             break
-    idx_out = idx[maxA <= iou_threshold]
+    if len(dense_mask) != 0:
+        idx_out = idx[torch.lt(maxA,dense_mask)]
+    else:
+        idx_out = idx[maxA <= iou_threshold]
     return idx_out
 
 def cluster_SPM_nms(boxes, scores, iou_threshold:float=0.5, top_k:int=200):

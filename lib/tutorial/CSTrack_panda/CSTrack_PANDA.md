@@ -31,11 +31,11 @@ pip install -r requirements.txt
 ```bash
 cd $SOTS/tracking
 # "--vis_state 1" denotes visualization of detection results 
-mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \  
-                                                --nms_thres 0.5                       \   
+mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \
+                                                --nms_thres 0.5                       \
                                                 --conf_thres 0.5                      \
                                                 --weights ../weights/cstrack_panda.pt \
-                                                --vis_state 0 
+                                                --vis_state 0
 ```
 
 
@@ -46,12 +46,12 @@ mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True               
 ```bash
 cd $SOTS/tracking
 # "--vis_state 1" denotes visualization of detection results 
-mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \  
+mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \
                                                 --det_results ../yolov5_panda         \
-                                                --nms_thres 0.5                       \   
+                                                --nms_thres 0.5                       \
                                                 --conf_thres 0.5                      \
                                                 --weights ../weights/cstrack_panda.pt \
-                                                --vis_state 0 
+                                                --vis_state 0
 ```
 
 

@@ -41,7 +41,7 @@ mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True               
 
 **Note:**  We provide a flexible API for model stacking. If you would like to stack more detection results from other detectors, you can test as follow. We provide an example of yolov5.
 1) Download [**yolov5_panda**](https://github.com/xiamingfu/YOLOV5_PANDA) and run it to yield the detection results (the candidate boxes will be saved as txt).
-2) You can run CSTrack as follow, where the **det_results** should set as the root of the detector.
+2) You can run CSTrack as follow, where the **det_results** should set as the root of the detector. It is worth noting that the extra candidate boxes would find the corresponding ID embeddings during CSTrack testing.
 
 ```bash
 cd $SOTS/tracking

@@ -68,8 +68,7 @@ python train_cstrack_panda.py --device 0,1 --batch_size 32
 
 ## Docker
 
-This is our docker implementation for PANDA competition
-
+This is our docker implementation for PANDA competition,please put yolov5_panda to `$SOTS`
 1. Install curl and docker 
 
    ```bash

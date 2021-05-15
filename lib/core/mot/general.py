@@ -237,16 +237,17 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
     coords[:, [0, 2]] -= pad[0]  # x padding
     coords[:, [1, 3]] -= pad[1]  # y padding
     coords[:, :4] /= gain
-    clip_coords(coords, img0_shape)
+    #clip_coords(coords, img0_shape)
     return coords
 
 
 def clip_coords(boxes, img_shape):
+    r = 0.1
     # Clip bounding xyxy bounding boxes to image shape (height, width)
-    boxes[:, 0].clamp_(0, img_shape[1])  # x1
-    boxes[:, 1].clamp_(0, img_shape[0])  # y1
-    boxes[:, 2].clamp_(0, img_shape[1])  # x2
-    boxes[:, 3].clamp_(0, img_shape[0])  # y2
+    boxes[:, 0].clamp_(-r*img_shape[1], img_shape[1]+r*img_shape[1])  # x1
+    boxes[:, 1].clamp_(-r*img_shape[0], img_shape[0]+r*img_shape[0])  # y1
+    boxes[:, 2].clamp_(-r*img_shape[1], img_shape[1]+r*img_shape[1])  # x2
+    boxes[:, 3].clamp_(-r*img_shape[0], img_shape[0]+r*img_shape[0])  # y2
 
 
 def ap_per_class(tp, conf, pred_cls, target_cls):
@@ -678,7 +679,7 @@ def non_max_suppression(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, 
     return output
 
 
-def non_max_suppression_and_inds(prediction, conf_thres=0.1, iou_thres=0.6, merge=False, classes=None, agnostic=False, method='standard'):
+def non_max_suppression_and_inds(prediction, conf_thres=0.1, iou_thres=0.6, dense_mask=[], merge=False, classes=None, agnostic=False, method='standard'):
     """Performs Non-Maximum Suppression (NMS) on inference results
 
     Returns:
@@ -749,7 +750,7 @@ def non_max_suppression_and_inds(prediction, conf_thres=0.1, iou_thres=0.6, merg
         if method == "cluster_SPM":
             i = cluster_SPM_nms(boxes, scores, iou_thres)
         if method == "cluster_diou":
-            i = cluster_diounms(boxes, scores, iou_thres)
+            i = cluster_diounms(boxes, scores, iou_thres, dense_mask)
         if method == "cluster_SPM_dist":
             i = cluster_SPM_dist_nms(boxes, scores, iou_thres)
             
@@ -774,6 +775,10 @@ def non_max_suppression_and_inds(prediction, conf_thres=0.1, iou_thres=0.6, merg
     if len(x) != 0:
         x_inds = (output[0][:, 0] + output[0][:, 2]) // 16
         y_inds = (output[0][:, 1] + output[0][:, 3]) // 16
+        y_inds[y_inds >= 76] = 75
+        #y_inds[y_inds < 0] = 0
+        x_inds[x_inds >= 136] = 135
+        #x_inds[x_inds < 0] = 0
         x_inds = x_inds.cpu().numpy().tolist()
         y_inds = y_inds.cpu().numpy().tolist()
         #x_inds = [int(x) for x in x_inds]

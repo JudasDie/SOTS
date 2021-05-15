@@ -1,10 +1,4 @@
-'''
-Date: 2021-04-22 16:44:41
-LastEditors: rushman
-LastEditTime: 2021-04-22 17:05:55
-Description: 
-'''
-import _init_paths  #这个很重要  自己去查
+import _init_paths 
 import os
 import os.path as osp
 import cv2
@@ -66,7 +60,7 @@ def eval_seq(data_dir,seqs,result_root):
 
 
 
-#历遍文件夹
+#Traverse folders
 def findfile(path, ret,file_state):
     filelist = os.listdir(path)
     for filename in filelist:
@@ -133,7 +127,7 @@ def frame_to_results(ori_dict):
         results.append((key, online_tlwhs, online_ids))
     return results
 
-# 匈牙利匹配
+# Hungary match
 def linear_assignment(cost_matrix, thresh):
     if cost_matrix.size == 0:
         return np.empty((0, 2), dtype=int), tuple(range(cost_matrix.shape[0])), tuple(range(cost_matrix.shape[1]))
@@ -237,7 +231,7 @@ def post_process(opt,seq,post_results_root):
     #print(label_dict.keys())
 
 
-#可视化结果image_MOT
+#visualization results of image_MOT
 def plot_tracking(filename,tracking_data_root,results, save_image_tracking=False):
     if not os.path.exists(filename):
         os.mkdir(filename)

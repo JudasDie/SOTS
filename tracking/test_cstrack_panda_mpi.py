@@ -233,7 +233,7 @@ if __name__ == '__main__':
             #              '''
             #seqs_str = '''panda_round2_test_20210331_B_part1/14_Ceremony
             #                          '''
-            seqs_str = '''panda_round2_train_20210331_part21/10_Huaqiangbei
+            seqs_str = '''panda_round2_train_20210331_part10/10_Huaqiangbei
                                       '''
 
             data_root = opt.data_dir

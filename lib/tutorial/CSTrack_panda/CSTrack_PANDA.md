@@ -32,6 +32,21 @@ pip install -r requirements.txt
 cd $SOTS/tracking
 # "--vis_state 1" denotes visualization of detection results 
 mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \  
+                                                --nms_thres 0.5                       \   
+                                                --conf_thres 0.5                      \
+                                                --weights ../weights/cstrack_panda.pt \
+                                                --vis_state 1 
+```
+
+
+**Note:**  We provide a flexible API for model stacking. If you would like to stack more detection results from other detectors, you can test as follow. We provides a example of yolov5.
+1) Download [**yolov5_panda**](https://github.com/xiamingfu/YOLOV5_PANDA) and run it to yield the detection results (the candidate boxes will be saved as txt).
+2) You can run CSTrack as follow, where the **det_results** should set as the root of the detector.
+
+```bash
+cd $SOTS/tracking
+# "--vis_state 1" denotes visualization of detection results 
+mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True                     \  
                                                 --det_results ../yolov5_panda         \
                                                 --nms_thres 0.5                       \   
                                                 --conf_thres 0.5                      \
@@ -39,9 +54,6 @@ mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True               
                                                 --vis_state 1 
 ```
 
-**Note:** We provide model fusion between detection results  of CSTrack  and other detection results  such as yolov5.
-
-[**yolov5_panda**](https://github.com/xiamingfu/YOLOV5_PANDA) will produce extra detection results, and `--det_results ../yolov5_panda` acquires the yolov5 detection results. You can fuse detection results of other detectors for further model fusion.  (if you only want to test CSTrack, please ignore the argument `--det_results ../yolov5_panda` )
 
 ## Training
 

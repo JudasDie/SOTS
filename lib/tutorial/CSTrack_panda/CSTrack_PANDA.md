@@ -35,7 +35,7 @@ mpirun -np 1 python test_cstrack_panda_mpi.py   --test_panda True               
                                                 --nms_thres 0.5                       \   
                                                 --conf_thres 0.5                      \
                                                 --weights ../weights/cstrack_panda.pt \
-                                                --vis_state 1 
+                                                --vis_state 0 
 ```
 
 

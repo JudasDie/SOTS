@@ -8,7 +8,7 @@ import json
 from mpi4py import MPI
 import sys
 
-#历遍文件夹
+# Traverse folders
 def findfile(path, ret,file_state):
     filelist = os.listdir(path)
     for filename in filelist:
@@ -19,13 +19,13 @@ def findfile(path, ret,file_state):
         else:
             findfile(de_path, ret,file_state)
 
-#创建新的目录
+# create new directory
 def dir_make(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
 
-#可视化结果image_MOT
+# visualization results of image_MOT
 def plot_tracking(filename,ret,results, save_image_tracking=False):
     if not os.path.exists(filename):
         os.mkdir(filename)

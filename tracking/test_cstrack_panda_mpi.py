@@ -133,13 +133,14 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
         logger.info('start seq: {}'.format(seq))
         yolov5_det_path = os.path.join(opt.det_results,seq.split("/")[-1]+".txt") # get the other detection results
         label_dict = {}
-        with open(yolov5_det_path, "a", encoding="utf-8") as f:
-            f = open(yolov5_det_path, "r", encoding="utf-8")
-            for line in f:
-                data = line.split(',')
-                if int(data[0]) not in label_dict.keys():
-                    label_dict[int(data[0])] = []
-                label_dict[int(data[0])].append([float(data[1]),float(data[2]),float(data[3]),float(data[4]),float(data[5])])
+        if os.path.exists(yolov5_det_path):
+            with open(yolov5_det_path, "a", encoding="utf-8") as f:
+                f = open(yolov5_det_path, "r", encoding="utf-8")
+                for line in f:
+                    data = line.split(',')
+                    if int(data[0]) not in label_dict.keys():
+                        label_dict[int(data[0])] = []
+                    label_dict[int(data[0])].append([float(data[1]),float(data[2]),float(data[3]),float(data[4]),float(data[5])])
 
 
         #dataloader = LoadImages_jde(osp.join(data_root, seq), opt.img_size,opt.val_hf)

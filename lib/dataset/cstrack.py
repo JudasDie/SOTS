@@ -57,7 +57,7 @@ def setup_seed(seed):
 def create_dataloader(root,path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
                       rank=-1, world_size=1, workers=8,state="train"):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache.
-    # 设置随机数种子
+    # Set random number seed
     setup_seed(2020)
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(root,path, imgsz, batch_size,

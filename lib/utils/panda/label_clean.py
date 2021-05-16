@@ -7,7 +7,7 @@ import shutil
 import json
 
 
-#历遍文件夹
+# Traverse folders
 def findfile(path, ret,file_state):
     filelist = os.listdir(path)
     for filename in filelist:
@@ -19,7 +19,7 @@ def findfile(path, ret,file_state):
             findfile(de_path, ret,file_state)
 
 
-#创建新的目录
+# create new directory
 def dir_make(path):
     if not os.path.exists(path):
         os.mkdir(path)

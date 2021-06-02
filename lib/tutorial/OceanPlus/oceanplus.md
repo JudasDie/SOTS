@@ -22,7 +22,7 @@ python setup.py develop
 
 1. Following the official [guidelines](https://www.votchallenge.net/howto/tutorial_python.html) to set up VOT workspace.
 
-2. Download from [GoogleDrive](https://drive.google.com/drive/folders/1Z6gPsRcheK4ZPbxpAAM7OjyyeyKF7e4G?usp=sharing) and put them in `$tracker_path/snapshot`
+2. Download from [GoogleDrive](https://drive.google.com/drive/folders/1_uagYRFpQmYoWAc0oeiAY49gHwQxztrN?usp=sharing) and put them in `$tracker_path/snapshot`
 
 
 ### Testing

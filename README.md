@@ -18,7 +18,6 @@
 
 ### Multi-Object Tracking (MOT)
 - [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138)
-- [ ] [**SiamMOT or CSTrackv2**](https://arxiv.org/pdf/2104.09441)(on the schedule...)
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)

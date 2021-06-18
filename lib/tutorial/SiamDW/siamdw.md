@@ -6,14 +6,21 @@ We assume the root path is $SOTS, e.g. `/home/zpzhang/SOTS`
 Please follow [readme of Ocean](../Ocean/ocean.md) to install the environment.
 
 ### Prepare data and models
-1. Download the pretrained [PyTorch model](https://drive.google.com/file/d/1SzIql02jJ6Id1k0M6f-zjUA3RgAm6E5U/view?usp=sharing) to `$TracKit/snapshot`.
+1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1QhNlhsatD0ufdz7Gxd2hgyRMxR4k_5z-?usp=sharing) to `$TracKit/snapshot`.
 2. Download [json](https://drive.google.com/open?id=1S-RkzyMVRFWueWW91NmZldUJuDyhGdp1) files of testing data and put thme in `$TracKit/dataset`.
-3. Download testing data e.g. VOT2017 and put them in `$TracKit/dataset`. 
+3. Download testing data e.g. VOT2017 and put them in `$SOTS/dataset`. 
 
 ### Testing
-In root path `$TracKit`,
+In root path `$SOTS`,
 ```
 python tracking/test_siamdw.py --arch Ocean --resume snapshot/siamdw_res22w.pth --dataset VOT2017
 ```
 
-We only provide the testing of best model `Res22W` in this repo. If you want to test other models or training, please follow the instructions of [SiamDW](https://github.com/researchmm/SiamDW). The testing hype-parameters and training of Res22W will be updated later.
+### Training
+1. Download the imagenet-pretrained [model](https://drive.google.com/drive/folders/13qgXymmi6u_YgHljU7D3BikSa4wx314U?usp=sharing) to `$SOTS/pretrain`.
+
+
+In root path `$SOTS`,
+```
+python tracking/onekey_siamdw.py
+```

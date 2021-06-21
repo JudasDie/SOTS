@@ -9,7 +9,7 @@ import sys
 import time
 import argparse
 
-lasot_base_path = '/data/share/LaSOTBenchmark'
+lasot_base_path = '/datassd/tracking/LaSOT/LaSOTBenchmark'
 
 
 # Print iterations progress (thanks StackOverflow)
@@ -95,13 +95,13 @@ def crop_video(video_f, video, crop_path, instanc_size):
         bbox = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]]  # (xmin, ymin, xmax, ymax)
 
         z, x = crop_like_SiamFC(im, bbox, instanc_size=instanc_size, padding=avg_chans)
-        cv2.imwrite(join(video_crop_base_path, '{:06d}.{:02d}.z.jpg'.format(int(idx), 0)), z)
+#        cv2.imwrite(join(video_crop_base_path, '{:06d}.{:02d}.z.jpg'.format(int(idx), 0)), z)
         cv2.imwrite(join(video_crop_base_path, '{:06d}.{:02d}.x.jpg'.format(int(idx), 0)), x)
 
 
 def main(instanc_size=511, num_threads=24):
     #crop_path = './crop{:d}'.format(instanc_size)
-    crop_path = '/data/share/LASOT/crop{:d}'.format(instanc_size)
+    crop_path = '/home/zpzhang/data/training/LARGESIAM/LASOT/crop{:d}'.format(instanc_size)
     if not isdir(crop_path): makedirs(crop_path)
 
     videos_fathers = sorted(listdir(lasot_base_path))

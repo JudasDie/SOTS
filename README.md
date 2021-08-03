@@ -3,9 +3,11 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
+:boom: The paper [AutoMacth](http://arxiv.org/abs/2108.00803) has been accepted by ICCV2021. Code and models will be released later (The main author is looking for job recently, so it may take a while.)
+
 :boom: The improved version of [CSTrack_panda](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md) has been released, containing the end-to-end tranining codes on PANDA. It is a strong baseline for [Gigavison](http://gigavision.cn/index.html) MOT tracking. Our tracker takes the **5th** place in **Tianchi Global AI Competition (天池—全球人工智能技术创新大赛[赛道二])**, with the score of **A-0.6712/B-0.6251 (AB榜)**, which surprisingly outperforms the baseline tracker JDE with score of A-0.32/B-0.34. More details about CSTrack_panda can be found [here](https://blog.csdn.net/qq_34919792/article/details/116792954?spm=1001.2014.3001.5501).
 
-[![MOT Tracking on Panda](https://res.cloudinary.com/marcomontalbano/image/upload/v1622981850/video_to_markdown/images/youtube--zRCRgsrW71s-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=zRCRgsrW71s "")
+<!-- [![MOT Tracking on Panda](https://res.cloudinary.com/marcomontalbano/image/upload/v1622981850/video_to_markdown/images/youtube--zRCRgsrW71s-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://www.youtube.com/watch?v=zRCRgsrW71s "") -->
 
 
 

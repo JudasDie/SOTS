@@ -26,13 +26,22 @@
 
 
 ## Tracker Details
+### AutoMatch [ICCV2021]
+**[[Paper]](http://arxiv.org/abs/2108.00803) [[Raw Results]]() [[Training and Testing Tutorial]]() [[Demo]]()** <br/>
+AutoMatch replaces the essence of Siamese tracking, i.e. the cross-correlation and its variants, to a learnable matching network. The underlying motivation is that heuristic matching network design relies heavily on expert experience. Moreover, we experimentally find that one sole matching operator is difficult to guarantee stable tracking in all challenging environments. In this work, we introduce six novel matching operators from the perspective of feature fusion instead of explicit similarity learning, namely Concatenation, Pointwise-Addition, Pairwise-Relation, FiLM, Simple-Transformer and Transductive-Guidance, to explore more feasibility on matching operator selection. The analyses reveal these operators' selective adaptability on different environment degradation types, which inspires us to combine them to explore complementary features. We propose binary channel manipulation (BCM) to search for the optimal combination of these operators. 
+
+<div align="left">
+  <img src="https://i.postimg.cc/cHCgTcbN/automatch.jpg" height="200" alt="Ocean"/><br/>
+</div>
+
+
+
 ### Ocean [ECCV2020]
 **[[Paper]](https://arxiv.org/abs/2006.10721) [[Raw Results]](https://drive.google.com/drive/folders/1w_SifcV_Ddu2TSqaV-14XSgLlKZq2lPN?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/Ocean/ocean.md) [[Demo]](https://www.youtube.com/watch?v=83-XCEsQ1Kg&feature=youtu.be)** <br/>
 
 Ocean proposes a general anchor-free based tracking framework. It includes a pixel-based anchor-free regression network to solve the weak rectification problem of RPN, and an object-aware classification network to learn robust target-related representation. Moreover, we introduce an effective multi-scale feature combination module to replace heavy result fusion mechanism in recent Siamese trackers. This work also serves as the baseline model of OceanPlus. An additional **TensorRT** toy demo is provided in this repo.
 <div align="left">
   <img src="https://github.com/JudasDie/SOTS/blob/master/demo/Ocean_overview.jpg" height="300" alt="Ocean"/><br/>
-  <!-- <p>Example SiamFC, SiamRPN and SiamMask outputs.</p> -->
 </div>
 
 ### SiamDW [CVPR2019]

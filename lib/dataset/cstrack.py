@@ -925,10 +925,10 @@ def load_mosaic(self, index):
         labels[:, 2] = ratio[1] * h * (x[:, 2] - x[:, 4] / 2) + pad[1]  # pad height
         labels[:, 3] = ratio[0] * w * (x[:, 1] + x[:, 3] / 2) + pad[0]
         labels[:, 4] = ratio[1] * h * (x[:, 2] + x[:, 4] / 2) + pad[1]
-    np.clip(labels[:, 1], 1, w-1, out=labels[:, 1])  # use with random_affine
-    np.clip(labels[:, 3], 1, w-1, out=labels[:, 3])  # use with random_affine
-    np.clip(labels[:, 2], 1, h-1, out=labels[:, 2])  # use with random_affine
-    np.clip(labels[:, 4], 1, h-1, out=labels[:, 4])  # use with random_affine
+    #np.clip(labels[:, 1], 1, w-1, out=labels[:, 1])  # use with random_affine
+    #np.clip(labels[:, 3], 1, w-1, out=labels[:, 3])  # use with random_affine
+    #np.clip(labels[:, 2], 1, h-1, out=labels[:, 2])  # use with random_affine
+    #np.clip(labels[:, 4], 1, h-1, out=labels[:, 4])  # use with random_affine
     return img, labels
 
 def load_mosaic_ori(self, index):
@@ -978,10 +978,10 @@ def load_mosaic_ori(self, index):
     if len(labels4):
         labels4 = np.concatenate(labels4, 0)
         # np.clip(labels4[:, 1:] - s / 2, 0, s, out=labels4[:, 1:])  # use with center crop
-        np.clip(labels4[:, 1], 0, 2 * x_s, out=labels4[:, 1])  # use with random_affine
-        np.clip(labels4[:, 3], 0, 2 * x_s, out=labels4[:, 3])  # use with random_affine
-        np.clip(labels4[:, 2], 0, 2 * y_s, out=labels4[:, 2])  # use with random_affine
-        np.clip(labels4[:, 4], 0, 2 * y_s, out=labels4[:, 4])  # use with random_affine
+        #np.clip(labels4[:, 1], 0, 2 * x_s, out=labels4[:, 1])  # use with random_affine
+        #np.clip(labels4[:, 3], 0, 2 * x_s, out=labels4[:, 3])  # use with random_affine
+        #np.clip(labels4[:, 2], 0, 2 * y_s, out=labels4[:, 2])  # use with random_affine
+        #np.clip(labels4[:, 4], 0, 2 * y_s, out=labels4[:, 4])  # use with random_affine
 
         # Replicate
         # img4, labels4 = replicate(img4, labels4)
@@ -1142,8 +1142,8 @@ def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shea
         # xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
 
         # clip boxes
-        xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
-        xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
+        #xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
+        #xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
 
         # filter candidates
         i = box_candidates(box1=targets[:, 1:5].T * s, box2=xy.T)

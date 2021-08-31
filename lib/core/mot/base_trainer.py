@@ -337,7 +337,11 @@ class MotLoss(torch.nn.Module):
         np = len(p)  # number of outputs
         balance = [4.0, 1.0, 0.4] if np == 3 else [4.0, 1.0, 0.4, 0.1]  # P3-5 or P3-6
         for i, pi in enumerate(p):  # layer index, layer predictions
+            out_w = pi.shape[3]
+            out_h = pi.shape[2]
             b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx
+            gj = torch.clamp(gj, min=0, max=out_h - 1)
+            gi = torch.clamp(gi, min=0, max=out_w - 1)
             tobj = torch.zeros_like(pi[..., 0], device=device)  # target obj
 
 
@@ -366,7 +370,10 @@ class MotLoss(torch.nn.Module):
 
                 #ID_loss
                 if i == 0:
-                    ps_id = id_embeding[indices_id[i]]
+                    b_id, h_id, w_id = indices_id[i]
+                    h_id = torch.clamp(h_id, min=0, max=out_h - 1)
+                    w_id = torch.clamp(w_id, min=0, max=out_w - 1)
+                    ps_id = id_embeding[b_id, h_id, w_id] 
                     #ps_id = pi[indices_id[i]][:, 6:]
                     id_head = self.emb_scale * F.normalize(ps_id).to(device)
                     #id_head = self.bottleneck(id_head)

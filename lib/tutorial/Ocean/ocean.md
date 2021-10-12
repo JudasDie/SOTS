@@ -20,8 +20,8 @@ python setup.py develop
 
 
 ### Prepare data and models
-1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1XU5wmyC7MsI6C_9Lv-UH1mwDIh57FFf8?usp=sharing) and [TensorRT model](https://drive.google.com/drive/folders/1HhoilA14rucTOstEw7rBkYkv3UhCgzWT?usp=sharing) to `$SOTS/snapshot`.
-2. Download [json](https://drive.google.com/drive/folders/1kYX_c8rw7HMW0e5V400vaLy9huiYvDHE?usp=sharing) files of testing data and put them in `$SOTS/dataset`.
+1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1JqmeAmV8UxLMSPzi-72amZAjyPa4dfFJ?usp=sharing) and [TensorRT model](https://drive.google.com/drive/folders/1HhoilA14rucTOstEw7rBkYkv3UhCgzWT?usp=sharing) to `$SOTS/snapshot`.
+2. Download [json](https://drive.google.com/drive/folders/17RkALMRkJCR6rcU--IV9Y1XQB-8GvBTU?usp=sharing) files of testing data and put them in `$SOTS/dataset`.
 3. Download testing data e.g. VOT2019 and put them in `$SOTS/dataset`. Please download each data from their official websites, and the directories should be named like `VOT2019`, `OTB2015`, `GOT10K`, `LASOT`.
 
 ### Testing
@@ -67,7 +67,7 @@ python tracking/test_ocean.py --arch Ocean --resume snapshot/OceanV.pth --datase
 
 
 #### prepare pretrained model
-Please download the pretrained model on ImageNet [here](https://drive.google.com/drive/folders/1ctoxaPiS9qinhmN_bl5z3VNhYnrhl99t?usp=sharing), and then put it in `$SOTS/pretrain`.
+Please download the pretrained model on ImageNet [here](https://drive.google.com/drive/folders/1-lk5K3Dg7f4ZCJv3IzjCrILtIkiCC2so?usp=sharing), and then put it in `$SOTS/pretrain`.
 
 #### modify settings
 Please modify the training settings in `$SOTS/experiments/train/Ocean.yaml`. The default number of GPU and batch size in paper are 8 and 32 respectively. 

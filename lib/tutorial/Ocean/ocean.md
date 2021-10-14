@@ -20,8 +20,8 @@ python setup.py develop
 
 
 ### Prepare data and models
-1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1JqmeAmV8UxLMSPzi-72amZAjyPa4dfFJ?usp=sharing) and [TensorRT model](https://drive.google.com/drive/folders/1HhoilA14rucTOstEw7rBkYkv3UhCgzWT?usp=sharing) to `$SOTS/snapshot`.
-2. Download [json](https://drive.google.com/drive/folders/17RkALMRkJCR6rcU--IV9Y1XQB-8GvBTU?usp=sharing) files of testing data and put them in `$SOTS/dataset`.
+1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1mm1huXGVG3evXoy-jDPfL0EUmyfYfyem?usp=sharing) and [TensorRT model](https://drive.google.com/drive/folders/1HhoilA14rucTOstEw7rBkYkv3UhCgzWT?usp=sharing) to `$SOTS/snapshot`.
+2. Download [json](https://drive.google.com/drive/folders/1yxZpFLp_i-990J10Kmo3mudU6aaT28GI?usp=sharing) files of testing data and put them in `$SOTS/dataset`.
 3. Download testing data e.g. VOT2019 and put them in `$SOTS/dataset`. Please download each data from their official websites, and the directories should be named like `VOT2019`, `OTB2015`, `GOT10K`, `LASOT`.
 
 ### Testing
@@ -34,7 +34,7 @@ python tracking/test_ocean.py --arch Ocean --resume snapshot/OceanV.pth --datase
 ```
 python lib/eval_toolkit/bin/eval.py --dataset_dir dataset --dataset VOT2019 --tracker_result_dir result/VOT2019 --trackers Ocean
 ```
-You may test other datasets with our code. Please corresponds the provided pre-trained model `--resume` and dataset `--dataset`. See [ocean_model.txt](https://drive.google.com/file/d/1T2QjyxN4movpFtpzCH8xHHX5_Dz7G5Y6/view?usp=sharing) for their correspondences.
+You may test other datasets with our code. Please corresponds the provided pre-trained model `--resume` and dataset `--dataset`. See [ocean_model.txt](https://drive.google.com/file/d/1uJq2pFGBZ0bM9NYfXX1s_xohppipgiou/view?usp=sharing) for their correspondences.
 
 
 ### TensorRT toy
@@ -67,7 +67,7 @@ python tracking/test_ocean.py --arch Ocean --resume snapshot/OceanV.pth --datase
 
 
 #### prepare pretrained model
-Please download the pretrained model on ImageNet [here](https://drive.google.com/drive/folders/1-lk5K3Dg7f4ZCJv3IzjCrILtIkiCC2so?usp=sharing), and then put it in `$SOTS/pretrain`.
+Please download the pretrained model on ImageNet [here](https://drive.google.com/drive/folders/1OY4x5PtegHXFx1Bgh9nT6hW3LN9YMNJb?usp=sharing), and then put it in `$SOTS/pretrain`.
 
 #### modify settings
 Please modify the training settings in `$SOTS/experiments/train/Ocean.yaml`. The default number of GPU and batch size in paper are 8 and 32 respectively. 

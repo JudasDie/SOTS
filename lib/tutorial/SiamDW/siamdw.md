@@ -6,7 +6,7 @@ We assume the root path is $SOTS, e.g. `/home/zpzhang/SOTS`
 Please follow [readme of Ocean](../Ocean/ocean.md) to install the environment.
 
 ### Prepare data and models
-1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/10KT3U6ulJ8tcifW4BOcS47eHiJ8Kt6Ac?usp=sharing) to `$TracKit/snapshot`.
+1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1Hu_DuAYxEWoeZPBZr71wLFNdWnmbz_mE?usp=sharing) to `$TracKit/snapshot`.
 2. Download [json](https://drive.google.com/drive/folders/17RkALMRkJCR6rcU--IV9Y1XQB-8GvBTU?usp=sharing) files of testing data and put thme in `$TracKit/dataset`.
 3. Download testing data e.g. VOT2017 and put them in `$SOTS/dataset`. 
 
@@ -17,7 +17,7 @@ python tracking/test_siamdw.py --arch Ocean --resume snapshot/siamdw_res22w.pth 
 ```
 
 ### Training
-1. Download the imagenet-pretrained [model](https://drive.google.com/drive/folders/1RxXNFhoEvBDM_2eBHJFO7jhwUZR6hhHf?usp=sharing) to `$SOTS/pretrain`.
+1. Download the imagenet-pretrained [model](https://drive.google.com/drive/folders/1CJNDA2SZjMIVG4rtO0ND3ie0aqlGoI8E?usp=sharing) to `$SOTS/pretrain`.
 
 
 In root path `$SOTS`,

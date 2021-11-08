@@ -20,8 +20,8 @@ conda activate $conda_env_name
 echo ""
 echo ""
 echo "****************** Installing pytorch with cuda10 ******************"
-conda install pytorch==1.8.1 
-pip install torchvision==0.9.1
+pip install torchvision
+pip install torch
 
 echo ""
 echo ""

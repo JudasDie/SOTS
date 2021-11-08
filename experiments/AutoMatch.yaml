@@ -1,0 +1,194 @@
+COMMON:
+  LOG_DIR: 'logs'   # log file
+  CHECKPOINT_DIR: 'snapshot'   # checkpoint file
+  GPUS: '0,1,2,3,4,5,6,7'
+
+MODEL:
+  NAME: 'AutoMatch'
+  BACKBONE:
+    NAME: "ResNet50Dilated"
+    LAYER: [3]
+  NECK:
+    NAME: "ShrinkChannelS3S4"
+    IN_CHANNEL: 1024
+    OUT_CHANNEL: 256
+  HEAD:
+    NAME: "Learn2Match"
+    IN_CHANNEL: 256
+    OUT_CHANNEL: 256
+  LOSS:
+    CLS_LOSS: WBCE
+    CLS_LOSS_ADDITIONAL: WBCE_ADDPOS
+    REG_LOSS: FCOSIOU
+
+TRAIN:
+  ISTRUE: True  # whether to test
+  WORKERS: 32
+  START_EPOCH: 0
+  END_EPOCH: 20
+  TEMPLATE_SIZE: 127
+  SEARCH_SIZE: 255
+  BATCH: 32   # batch for each GPU
+  STRIDE: 8
+  RESUME: False
+  PRETRAIN: 'ltm_nas.model'
+  LR_POLICY: 'log'
+  PRINT_FREQ: 10
+  CLS_WEIGHT: 1
+  REG_WEIGHT: 1
+  CLIP_GRAD: False
+
+  DDP:
+    ISTRUE: False  # torch distributed data parallel, default: False, normal data parallel
+    RANK: 0
+
+
+  WARMUP:
+    IFNOT: True
+    TYPE: 'step'
+    EPOCH: 5            # res50 5
+    WARM_POLICY: 'step'
+    KWARGS:
+      start_lr: 0.001    # res50 0.001 alex: 0.005
+      end_lr: 0.005      # res50 0.005  alex: 0.01
+      step: 1
+  LR:
+    TYPE: 'log'
+    KWARGS:
+      start_lr: 0.005        # res50 0.005  alex 0.01
+      end_lr: 0.0005         # res50 0.0005
+
+
+  LAYERS_LR: 0.1  # res50 0.1  alex: 1  # scale ration for backbone
+  BASE_LR: 0.005
+  UNFIX_EPOCH: 5
+  UNFIX_POLICY: 'log'
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  TRAINABLE_LAYER: ['layer1', 'layer2', 'layer3']  # ['layer2', 'layer3', 'layer4'] [] FOR ALL LAYERS
+
+  DATASET:
+    WHICH_USE: ['YTB', 'VID', 'COCO', 'DET', 'GOT10K']
+
+    AUG:
+      EXEMPLAR:
+        SHIFT: 4
+        SCALE: 0.05
+      SEARCH:
+        SHIFTs: 64
+        SCALEs: 0.18
+      COMMON:
+        COLOR: 1
+        FLIP: 0
+        BLUR: 0
+        ROTATION: 0
+        LABELSMOOTH: False
+        MIXUP: 0
+        GRAY: 0
+        CUTOUT: 0
+        NEG: 0.2
+    CONFIG:
+      VID:
+        PATH: './data/vid/crop511'
+        ANNOTATION: './data/vid/train.json'
+        RANGE: 100
+        USE: 100000
+      YTB:
+        PATH: './data/y2b/crop511'
+        ANNOTATION: './data/y2b/train.json'
+        RANGE: 3
+        USE: 200000
+      GOT10K:
+        PATH: './data/got10k/crop511'
+        ANNOTATION: './data/got10k/all.json'
+        RANGE: 100
+        USE: 200000
+      DET:
+        PATH: './data/det/crop511'
+        ANNOTATION: './data/det/train.json'
+        RANGE: 100
+        USE: 50000
+      COCO:
+        PATH: "./data/coco/crop511"
+        ANNOTATION: "./data/coco/train2017.json"
+        RANGE: 1
+        USE: 50000
+
+TEST:    # TEST model is same as TRAIN.MODEL
+  ISTRUE: True  # whether to test
+  THREADS: 16   # multi threads test
+  DATA: 'OTB2015'
+  START_EPOCH: 5
+  END_EPOCH: 20
+  EPOCH_TEST: True   # use default hyper-parameters
+  RESUME: None   # if not false, ignore start and end epochs
+  HYPERS:
+    OTB2015:
+      penalty_k: 0.147
+      lr: 0.699
+      window_influence: 0.55
+      small_sz: 255
+      big_sz: 287
+    VOT2019:
+      penalty_k: 0.143
+      lr: 0.803
+      window_influence: 0.5
+      small_sz: 255
+      big_sz: 255
+    GOT10KTEST:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.34
+      small_sz: 255
+      big_sz: 255
+    LASOTTEST:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.38
+      small_sz: 255
+      big_sz: 255
+    TNL2K:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.4
+      small_sz: 255
+      big_sz: 255
+    TOTB:
+      penalty_k: 0.103
+      lr: 0.82
+      window_influence: 0.56
+      small_sz: 255
+      big_sz: 255
+    NFS30:
+      penalty_k: 0.015
+      lr: 0.944
+      window_influence: 0.2
+      small_sz: 255
+      big_sz: 255
+    TC128:
+      penalty_k: 0.063
+      lr: 0.519
+      window_influence: 0.4
+      small_sz: 255
+      big_sz: 255
+    UAV123:
+      penalty_k: 0.128
+      lr: 0.913
+      window_influence: 0.41
+      small_sz: 255
+      big_sz: 271
+    TRACKINGNET:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.34
+      small_sz: 255
+      big_sz: 255
+
+TUNE:    # TUNE model is same as TRAIN.MODEL
+  ISTRUE: False  # whether to tune
+  DATA: 'OTB2015'
+  RESUME: 'snapshot/checkpoint_e7.pth'   # please change this to the checkpoint you want
+  TRIAL_PER_GPU: 4
+
+
+

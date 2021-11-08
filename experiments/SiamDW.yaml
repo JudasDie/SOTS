@@ -1,0 +1,145 @@
+COMMON:
+  LOG_DIR: 'logs'   # log file
+  CHECKPOINT_DIR: 'snapshot'   # checkpoint file
+  GPUS: '0,1'
+
+MODEL:
+  NAME: 'SiamDW'
+  BACKBONE:
+    NAME: "ResNet22W"
+    LAYER: [2]
+  NECK:
+    NAME: None
+  HEAD:
+    NAME: "SiamFCCorr"
+  LOSS:
+    CLS_LOSS: WBCE
+    REG_LOSS: None
+
+TRAIN:
+  ISTRUE: False   # whether to train
+  WORKERS: 8
+  START_EPOCH: 0
+  END_EPOCH: 20
+  TEMPLATE_SIZE: 127
+  SEARCH_SIZE: 255
+  BATCH: 32   # batch for each GPU
+  STRIDE: 8
+  PRETRAIN: 'res22w.model'
+  LR_POLICY: 'log'
+  LR: 0.01
+  LR_END: 0.00001
+  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  PRINT_FREQ: 10
+  UNFIX_EPOCH: None
+  CLIP_GRAD: False
+  RESUME: False
+
+  DDP:
+    ISTRUE: False  # torch distributed data parallel, default: False, normal data parallel
+    RANK: 0
+
+  DATASET:
+    WHICH_USE: ['GOT10K']
+    AUG:
+      EXEMPLAR:
+        SHIFT: 4
+        SCALE: 0.05
+      SEARCH:
+        SHIFTs: 4
+        SCALEs: 0.18
+      COMMON:
+        COLOR: 1
+        FLIP: 0
+        BLUR: 0
+        ROTATION: 0
+        LABELSMOOTH: False
+        MIXUP: 0
+        GRAY: 0
+        CUTOUT: 0
+        NEG: 0
+    CONFIG:
+      VID:
+        PATH: './data/vid/crop511'
+        ANNOTATION: './data/vid/train.json'
+        RANGE: 100
+        USE: 100000
+      YTB:
+        PATH: './data/y2b/crop511'
+        ANNOTATION: './data/y2b/train.json'
+        RANGE: 3
+        USE: 200000
+      GOT10K:
+        PATH: './data/got10k/crop511'
+        ANNOTATION: './data/got10k/all.json'
+        RANGE: 100
+        USE: 200000
+      DET:
+        PATH: './data/det/crop511'
+        ANNOTATION: './data/det/train.json'
+        RANGE: 100
+        USE: 50000
+      COCO:
+        PATH: "./data/coco/crop511"
+        ANNOTATION: "./data/coco/train2017.json"
+        RANGE: 1
+        USE: 50000
+
+TEST:    # TEST model is same as TRAIN.MODEL
+  ISTRUE: False  # whether to test
+  THREADS: 16   # multi threads test
+  DATA: 'TRACKINGNET'
+  START_EPOCH: 5
+  END_EPOCH: 20
+  EPOCH_TEST: False   # use default hyper-parameters
+  RESUME: "snapshot/SiamDW.pth"   # if not false, ignore start and end epochs
+
+  HYPERS:
+    OTB2015:
+      scale_step_FC: 1.089
+      lr: 0.245
+      scale_penalty_FC: 0.954
+      window_influence: 0.292
+    GOT10KTEST: 
+      scale_step_FC: 1.199 
+      lr: 0.454 
+      scale_penalty_FC: 0.963 
+      window_influence: 0.279
+    LASOTTEST:
+      scale_step_FC: 1.071
+      lr: 0.283
+      scale_penalty_FC: 0.986
+      window_influence: 0.232
+    TNL2K:
+      scale_step_FC: 1.089
+      lr: 0.245
+      scale_penalty_FC: 0.954
+      window_influence: 0.292
+    TOTB:
+      scale_step_FC: 1.074
+      lr: 0.211
+      scale_penalty_FC: 0.956
+      window_influence: 0.303
+    NFS30:
+      scale_step_FC: 1.124
+      lr: 0.341
+      scale_penalty_FC: 0.956
+      window_influence: 0.200
+    UAV123:
+      scale_step_FC: 1.071
+      lr: 0.283
+      scale_penalty_FC: 0.986
+      window_influence: 0.232
+    TRACKINGNET:
+      scale_step_FC: 1.089
+      lr: 0.245
+      scale_penalty_FC: 0.954
+      window_influence: 0.292
+TUNE:    # TUNE model is same as TRAIN.MODEL
+  ISTRUE: True  # whether to tune
+  DATA: 'UAV123'
+  RESUME: 'snapshot/SiamDW.pth'
+  TRIAL_PER_GPU: 4
+
+

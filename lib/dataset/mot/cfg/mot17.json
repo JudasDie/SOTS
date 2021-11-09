@@ -1,0 +1,15 @@
+{
+    "root":"/data/lc/JDE_data",
+    "train":
+    {
+        "mot17":"../lib/dataset/mot/data/mot17.train"
+    },
+    "test_emb":
+    {
+        "mot15":"../lib/dataset/mot/data/mot15.val"
+    },
+    "test":
+    {
+        "mot15":"../lib/dataset/mot/data/mot15.val"
+    }
+}

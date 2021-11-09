@@ -65,6 +65,12 @@ $SOTS
 
 ```
 
+## Performance
+| <sub>Model</br></sub> | <sub>OTB2015</br> </sub> | <sub>GOT10K</br> </sub> | <sub>LaSOT</br> </sub> | <sub>TNL2K</br></sub> | <sub>TrackingNet</br></sub> | <sub>NFS30</br> </sub> | <sub>TOTB</sub> |<sub>VOT2019</sub> |<sub>TC128</sub> |<sub>UAV123</sub> | 
+|:-----:|:-:|:----:|:------:|:--------:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+| <sub>SiamDW<sub>  | <sub>0.670</sub> | <sub>0.429</sub> | <sub>0.386</sub>|<sub>0.348</sub>|<sub>61.1</sub>| <sub>0.521</sub> |<sub>0.500</sub> |<sub>0.241</sub> |<sub>0.583</sub> |<sub>0.536</sub> |
+| <sub>Ocean</sub>   |  <sub>0.676</sub> | <sub>0.615</sub> | <sub>0.517</sub>|<sub>0.421</sub>|<sub>69.2</sub>| <sub>0.553</sub> |<sub>0.638</sub> |<sub>0.323</sub> |<sub>0.585</sub> |<sub>0.621</sub> |
+| <sub>AutoMatch</sub> | <sub>0.714</sub> | <sub>0.652</sub> | <sub>0.583</sub>|<sub>0.472</sub>|<sub>76.0</sub>| <sub>0.606</sub> |<sub>0.668</sub> |<sub>0.322</sub> |<sub>0.634</sub> |<sub>0.644</sub> |
 
 
 

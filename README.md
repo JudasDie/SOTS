@@ -74,7 +74,7 @@ Other trackers, coming soon ...
 :cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud:
 
 
-## Structure
+<!-- ## Structure
 - `experiments:` training and testing settings
 - `demo:` figures for readme
 - `dataset:` testing dataset
@@ -97,7 +97,7 @@ $TrackSeg
      |—— ants1...
   |—— VOT2020
      |—— ants1...
-|—— ...
+|—— ... -->
 
 ```
 

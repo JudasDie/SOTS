@@ -71,8 +71,8 @@ This version can achieve the performance described in the paper (70.7 MOTA on MO
 Other trackers, coming soon ...
 
 
-:cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud:
-
+<!-- :cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud::cloud:
+ -->
 
 <!-- ## Structure
 - `experiments:` training and testing settings
@@ -101,15 +101,6 @@ $TrackSeg
 
 ```
 
-## References
-```
-[1] Bhat G, Danelljan M, et al. Learning discriminative model prediction for tracking. ICCV2019.
-[2] Chen, Kai and Wang, et.al. MMDetection: Open MMLab Detection Toolbox and Benchmark.
-...
-```
-## Contributors
-- **[Zhipeng Zhang](http://zhipengzhang.cn/)**
-- **[Chao Liang](https://github.com/H11zang)**
 
 
 

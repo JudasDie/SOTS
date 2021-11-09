@@ -32,7 +32,7 @@
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)
 
 ## Branches
-- main: for our SOT trackers
+- SOT (or master): for our SOT trackers
 - MOT: for our MOT trackers
 - v0: old codebase supporting `OceanPlus` and `TensorRT testing`.
 

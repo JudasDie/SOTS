@@ -78,7 +78,7 @@ def main():
 
     model = model.cuda()
     logger.info(model)
-    model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True)    # load pretrain
+    model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True, addhead=True)    # load pretrain
 
     # get optimizer
     if not config.TRAIN.START_EPOCH == config.TRAIN.UNFIX_EPOCH and not config.MODEL.NAME in ['SiamDW', 'SiamFC']:

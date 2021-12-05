@@ -24,7 +24,7 @@
 ## Tracker Details
 ### OMC [AAAI2022]
 **[[Paper]](https://arxiv.org/abs/2104.09441) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/OMC/lib/tutorial/omc.md)** <br/>
-AutoMatch replaces the essence of Siamese tracking, i.e. the cross-correlation and its variants, to a learnable matching network. The underlying motivation is that heuristic matching network design relies heavily on expert experience. Moreover, we experimentally find that one sole matching operator is difficult to guarantee stable tracking in all challenging environments. In this work, we introduce six novel matching operators from the perspective of feature fusion instead of explicit similarity learning, namely Concatenation, Pointwise-Addition, Pairwise-Relation, FiLM, Simple-Transformer and Transductive-Guidance, to explore more feasibility on matching operator selection. The analyses reveal these operators' selective adaptability on different environment degradation types, which inspires us to combine them to explore complementary features. We propose binary channel manipulation (BCM) to search for the optimal combination of these operators. 
+OMC introduces a double-check mechanism to make the "fake background" be tracked again. Specifically, we design a re-check network as the auxiliary to initial detections. If the target does not exist in the first-check predictions (i.e., the results of object detector), as a potential misclassified target, it has a chance to be restored by the re-check network, which searches targets through mining temporal cues. Note that, the re-check network innovatively expands the role of ID embedding from data association to motion forecasting by effectively propagating previous tracklets to the current frame with a small overhead. Even with multiple tracklets, our re-check network can still propagate with one forward pass by a simple matrix multiplication. Building on a strong baseline CSTrack, we construct a new one-shot tracker and achieve favorable gains.
 
 <img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/OMC.jpg" height="600" alt="OMC"/><br/>
 
@@ -60,9 +60,9 @@ $TrackSeg
      |—— ants1...
   |—— VOT2020
      |—— ants1...
-|—— ... -->
+|—— ...
 
-```
+``` -->
 
 
 

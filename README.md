@@ -12,11 +12,6 @@
 
 ## Supported Trackers (MOT)
 
-<!-- ### Single-Object Tracking (SOT)
-- [x] [**[ECCV2020] Ocean and Ocean+**](https://arxiv.org/abs/2006.10721)
-- [x] [**[CVPR2019 Oral] SiamDW**](http://openaccess.thecvf.com/content_CVPR_2019/html/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.html) -->
-
-
 ### Multi-Object Tracking (MOT)
 - [x] [**[AAAI2022] OMC**](https://arxiv.org/abs/2104.09441)
 - [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138)
@@ -27,11 +22,10 @@
 
 ## Tracker Details
 ### OMC [AAAI2022]
-**[[Paper]](https://arxiv.org/abs/2104.09441) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/OMC/lib/tutorial/omc.md) ** <br/>
+**[[Paper]](https://arxiv.org/abs/2104.09441) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/OMC/lib/tutorial/omc.md)** <br/>
 AutoMatch replaces the essence of Siamese tracking, i.e. the cross-correlation and its variants, to a learnable matching network. The underlying motivation is that heuristic matching network design relies heavily on expert experience. Moreover, we experimentally find that one sole matching operator is difficult to guarantee stable tracking in all challenging environments. In this work, we introduce six novel matching operators from the perspective of feature fusion instead of explicit similarity learning, namely Concatenation, Pointwise-Addition, Pairwise-Relation, FiLM, Simple-Transformer and Transductive-Guidance, to explore more feasibility on matching operator selection. The analyses reveal these operators' selective adaptability on different environment degradation types, which inspires us to combine them to explore complementary features. We propose binary channel manipulation (BCM) to search for the optimal combination of these operators. 
 
-<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/OMC_overview.jpg" height="200" alt="OMC"/><br/>
-<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/Re-check%20network.jpg" height="200" alt="OMC"/><br/>
+<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/OMC.jpg" height="600" alt="OMC"/><br/>
 
 ### CSTrack [Arxiv now]
 **[[Paper]](https://arxiv.org/abs/2010.12138) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/CSTrack/lib/tutorial/CSTrack/cstrack.md) [[Demo]](https://motchallenge.net/method/MOT=3601&chl=10)** <br/>

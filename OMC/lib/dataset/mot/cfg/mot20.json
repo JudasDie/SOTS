@@ -1,0 +1,15 @@
+{
+    "root":"/data/lc",
+    "train":
+    {
+        "mot20":"../lib/dataset/mot/data/mot20.train"
+    },
+    "test_emb":
+    {
+        "mot15":"../lib/dataset/mot/data/mot15.val"
+    },
+    "test":
+    {
+        "mot15":"../lib/dataset/mot/data/mot15.val"
+    }
+}

@@ -3,6 +3,8 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
+:boom: [OMC](https://arxiv.org/abs/2104.09441) is accepted by AAAI2022. The training and testing code has been released in this codebase.
+
 :boom: [AutoMatch](https://openaccess.thecvf.com/content/ICCV2021/papers/Zhang_Learn_To_Match_Automatic_Matching_Network_Design_for_Visual_Tracking_ICCV_2021_paper.pdf) is accepted by ICCV2021. The training and testing code has been released in this codebase.
 
 :boom: [CSTrack](https://arxiv.org/abs/2010.12138) ranks 5/4000 at `Tianchi Global AI Competition`.
@@ -26,6 +28,7 @@
 
 
 ### Multi-Object Tracking (MOT)
+- [x] [**[AAAI2022] OMC**](https://arxiv.org/abs/2104.09441)
 - [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138) 
 
 ## Results Comparison
@@ -75,6 +78,14 @@ $SOTS
 
 
 ## Tracker Details
+### OMC [AAAI2022]
+**[[Paper]](https://arxiv.org/abs/2104.09441) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/OMC/lib/tutorial/omc.md)** <br/>
+OMC introduces a double-check mechanism to make the "fake background" be tracked again. Specifically, we design a re-check network as the auxiliary to initial detections. If the target does not exist in the first-check predictions (i.e., the results of object detector), as a potential misclassified target, it has a chance to be restored by the re-check network, which searches targets through mining temporal cues. Note that, the re-check network innovatively expands the role of ID embedding from data association to motion forecasting by effectively propagating previous tracklets to the current frame with a small overhead. Even with multiple tracklets, our re-check network can still propagate with one forward pass by a simple matrix multiplication. Building on a strong baseline CSTrack, we construct a new one-shot tracker and achieve favorable gains.
+
+<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/OMC.jpg" height="600" alt="OMC"/><br/>
+  
+  
+  
 ### AutoMatch [ICCV2021]
 **[[Paper]](https://openaccess.thecvf.com/content/ICCV2021/papers/Zhang_Learn_To_Match_Automatic_Matching_Network_Design_for_Visual_Tracking_ICCV_2021_paper.pdf) [[Raw Results]](https://drive.google.com/drive/folders/1uYDru48cX6oYN8FPt26UD9E_CvsHypvw?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/sot/sot.md) [[Demo]](https://crossminds.ai/video/learn-to-match-automatic-matching-network-design-for-visual-tracking-615cac8654e2c0f6b5817867/)** <br/>
 AutoMatch replaces the essence of Siamese tracking, i.e. the cross-correlation and its variants, to a learnable matching network. The underlying motivation is that heuristic matching network design relies heavily on expert experience. Moreover, we experimentally find that one sole matching operator is difficult to guarantee stable tracking in all challenging environments. In this work, we introduce six novel matching operators from the perspective of feature fusion instead of explicit similarity learning, namely Concatenation, Pointwise-Addition, Pairwise-Relation, FiLM, Simple-Transformer and Transductive-Guidance, to explore more feasibility on matching operator selection. The analyses reveal these operators' selective adaptability on different environment degradation types, which inspires us to combine them to explore complementary features. We propose binary channel manipulation (BCM) to search for the optimal combination of these operators. 
@@ -112,12 +123,12 @@ Official implementation of the OceanPlus tracker. It proposes an attention retri
 
 
 ### CSTrack [Arxiv now]
-**[[Paper]](https://arxiv.org/abs/2010.12138) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/master/lib/tutorial/CSTrack/cstrack.md) [[Demo]](https://motchallenge.net/method/MOT=3601&chl=10)** <br/>
+**[[Paper]](https://arxiv.org/abs/2010.12138) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/CSTrack/lib/tutorial/CSTrack/cstrack.md) [[Demo]](https://motchallenge.net/method/MOT=3601&chl=10)** <br/>
 CSTrack proposes a strong ReID based one-shot MOT framework. It includes a novel cross-correlation network that can effectively impel the separate branches to learn task-dependent representations, and a scale-aware attention network that learns discriminative embeddings to improve the ReID capability. This work also provides an analysis of the weak data association ability in one-shot MOT methods. Our improvements make the data association ability of our one-shot model is comparable to two-stage methods while running more faster.
 
-<img src="https://github.com/JudasDie/SOTS/blob/master/demo/CSTrack_CCN.jpg" height="300" alt="CSTrack"/><br/>
+<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/CSTrack_CCN.jpg" height="300" alt="CSTrack"/><br/>
 
-This version can achieve the performance described in the paper (70.7 MOTA on MOT16, 70.6 MOTA on MOT17). The new version will be released soon. If you are interested in our work or have any questions, please contact me at 201921060415@std.uestc.edu.cn.
+If you are interested in our work or have any questions, please contact me at 201921060415@std.uestc.edu.cn.
 
 
 Other trackers, coming soon ...

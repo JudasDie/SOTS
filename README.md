@@ -3,6 +3,7 @@
 ### Codes of our multiple object tracking paper.
 
 ## News
+:boom: [OMC](https://arxiv.org/abs/2104.09441) is accepted by AAAI2022. The training and testing code has been released in this codebase.
 
 :boom: The improved version of [CSTrack_panda](https://github.com/JudasDie/SOTS/blob/MOT/CSTrack/lib/tutorial/CSTrack_panda/CSTrack_PANDA.md) has been released, containing the end-to-end tranining codes on PANDA. It is a strong baseline for [Gigavison](http://gigavision.cn/index.html) MOT tracking. Our tracker takes the **5th** place in **Tianchi Global AI Competition (天池—全球人工智能技术创新大赛[赛道二])**, with the score of **A-0.6712/B-0.6251 (AB榜)**, which surprisingly outperforms the baseline tracker JDE with score of A-0.32/B-0.34. More details about CSTrack_panda can be found [here](https://blog.csdn.net/qq_34919792/article/details/116792954?spm=1001.2014.3001.5501).
 
@@ -14,7 +15,7 @@
 
 ### Multi-Object Tracking (MOT)
 - [x] [**[AAAI2022] OMC**](https://arxiv.org/abs/2104.09441)
-- [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138)
+- [x] [**CSTrack**](https://arxiv.org/abs/2010.12138)
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)

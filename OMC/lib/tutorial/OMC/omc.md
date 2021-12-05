@@ -8,7 +8,7 @@ We assume the root path is $OMC, e.g. `/home/chaoliang/MOT`
 ```
 conda create -n OMC python=3.8
 source activate OMC
-cd OMC/lib/tutorial/OMC/
+cd OMC/lib/tutorial/
 pip install -r requirements.txt
 ```
 

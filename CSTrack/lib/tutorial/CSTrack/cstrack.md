@@ -1,6 +1,6 @@
 # CSTrack tutorial
 
-We assume the root path is $SOTS, e.g. `/home/chaoliang/SOTS`
+We assume the root path is $CSTrack
 
 ## Set up environment
 
@@ -8,26 +8,26 @@ We assume the root path is $SOTS, e.g. `/home/chaoliang/SOTS`
 ```
 conda create -n CSTrack python=3.8
 source activate CSTrack
-cd SOTS/lib/tutorial/CSTrack/
+cd CSTrack/lib/tutorial/CSTrack/
 pip install -r requirements.txt
 ```
 
 
 ## Testing
 ### Prepare data and models
-1. Download the pretrained model[[Google Drive]](https://drive.google.com/file/d/1x0HUDD9t6mnHi3q2N3Uf4gtmBBwPvAd7/view?usp=sharing)[[Baidu NetDisk(oc33)]](https://pan.baidu.com/s/1vIi4aWw-uRT9fZBN2aksBg) to `$SOTS/weights`.
-2. Download testing data e.g. MOT-16 and put them in `$SOTS/dataset`. The dataset can be downloaded from their [official webpage](https://motchallenge.net/).
+1. Download the pretrained model[[Google Drive]](https://drive.google.com/file/d/1x0HUDD9t6mnHi3q2N3Uf4gtmBBwPvAd7/view?usp=sharing)[[Baidu NetDisk(oc33)]](https://pan.baidu.com/s/1vIi4aWw-uRT9fZBN2aksBg) to `$CSTrack/weights`.
+2. Download testing data e.g. MOT-16 and put them in `$CSTrack/dataset`. The dataset can be downloaded from their [official webpage](https://motchallenge.net/).
 
 
 ### Testing
-In root path `$SOTS/tracking`,
+In root path `$CSTrack/tracking`,
 
 #### For MOT-16
 ```
 python test_cstrack.py --nms_thres 0.6
                        --conf_thres 0.5
-                       --weights $SOTS/weights/cstrack.pt
-                       --data_dir $SOTS/dataset
+                       --weights $CSTrack/weights/cstrack.pt
+                       --data_dir $CSTrack/dataset
                        --device 0
                        --test_mot16 True
                        --vis_state 0/1
@@ -37,8 +37,8 @@ python test_cstrack.py --nms_thres 0.6
 ```
 python test_cstrack.py --nms_thres 0.6
                        --conf_thres 0.5
-                       --weights $SOTS/weights/cstrack.pt
-                       --data_dir $SOTS/dataset
+                       --weights $CSTrack/weights/cstrack.pt
+                       --data_dir $CSTrack/dataset
                        --device 0
                        --test_mot17 True
                        --vis_state 0/1
@@ -53,7 +53,7 @@ python test_cstrack.py --nms_thres 0.6
 
 ### Prepare data and models
 
-1. Download the pretrained model which pretrain in COCO dataset [[Google Drive]](https://drive.google.com/file/d/1qJHNlEXPVirDVmWL7hHeU4-P9amWHJHR/view?usp=sharing)[[Baidu NetDisk(ba1g)]](https://pan.baidu.com/s/1S04i6-yxQ3QHtfUDDtd1Kw) to `$SOTS/weights`.
+1. Download the pretrained model which pretrain in COCO dataset [[Google Drive]](https://drive.google.com/file/d/1qJHNlEXPVirDVmWL7hHeU4-P9amWHJHR/view?usp=sharing)[[Baidu NetDisk(ba1g)]](https://pan.baidu.com/s/1S04i6-yxQ3QHtfUDDtd1Kw) to `$CSTrack/weights`.
 
 2. We provide several relevant datasets for training and evaluating the CSTrack. 
 Annotations are provided in a unified format and all the datasets have the following structure:
@@ -199,11 +199,11 @@ crowdhuman
 
 ### Training
 1. Modify scripts
-Set the dataset path in line2 of `$SOTS/lib/dataset/mot/cfg/*.json`.
+Set the dataset path in line2 of `$CSTrack/lib/dataset/mot/cfg/*.json`.
 
 2. run
 ```
-python train_cstrack.py --batch_size 8 --device 0 --weights $SOTS/weights/yolov5l.pt --epochs 30 --data ../lib/dataset/mot/cfg/data_ch.json #train on all datasets
+python train_cstrack.py --batch_size 8 --device 0 --weights $CSTrack/weights/yolov5l.pt --epochs 30 --data ../lib/dataset/mot/cfg/data_ch.json #train on all datasets
                                                                                                 ../lib/dataset/mot/cfg/data.json #train on datasets like JDE
                                                                                                 ../lib/dataset/mot/cfg/mot17.json #train on MOT17 training set
                                                                                                 ../lib/dataset/mot/cfg/mot17_hf.json #train on the half of MOT17 training set

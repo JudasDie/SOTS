@@ -1,6 +1,6 @@
 # OMC tutorial
 
-We assume the root path is $SOTS, e.g. `/home/chaoliang/MOT`
+We assume the root path is $OMC, e.g. `/home/chaoliang/MOT`
 
 ## Set up environment
 
@@ -8,7 +8,7 @@ We assume the root path is $SOTS, e.g. `/home/chaoliang/MOT`
 ```
 conda create -n OMC python=3.8
 source activate OMC
-cd SOTS/lib/tutorial/OMC/
+cd OMC/lib/tutorial/OMC/
 pip install -r requirements.txt
 ```
 
@@ -206,7 +206,7 @@ crowdhuman
 
 1. Modify scripts：Set the dataset path in line2 of `$SOTS/lib/dataset/mot/cfg/*.json`.
 
-2. cd `$SOTS/tracking/`
+2. cd `$OMC/tracking/`
 
 
 #### for MOT16/MOT17

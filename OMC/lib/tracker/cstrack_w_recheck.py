@@ -272,11 +272,6 @@ class JDETracker(object):
                 ious_fuse_index = ious_fuse <= self.opt.iousfuse_thres
                 x_inds = x_inds + xs_siam[ious_fuse_index].tolist()
                 y_inds = y_inds + ys_siam[ious_fuse_index].tolist()
-                if self.opt.vis_state:
-                    dets_ori = dets.clone()
-                    dets_add = p_siam_n[ious_fuse_index].clone()
-                    scale_coords(self.opt.img_size, dets_ori[:, :4], img0.shape).round()
-                    scale_coords(self.opt.img_size, dets_add[:, :4], img0.shape).round()
                 dets = torch.cat([dets,p_siam_n[ious_fuse_index]],dim=0)
 
         if len(dets) != 0:

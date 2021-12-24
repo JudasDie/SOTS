@@ -87,7 +87,7 @@ def siamese_train(inputs):
 
         if (iter + 1) % cfg.TRAIN.PRINT_FREQ == 0:
             logger.info(
-                'Epoch: [{0}][{1}/{2}] lr: {lr:.7f}\t Batch Time: {batch_time.avg:.3f}s \t Data Time:{data_time.avg:.3f}s \t CLS_Loss:{cls_loss.avg:.5f} \t Loss:{loss.avg:.5f}'.format(
+                'Epoch: [{0}][{1}/{2}] lr: {lr:.7f}\t Batch Time: {batch_time.avg:.3f}s \t Data Time:{data_time.avg:.3f}s \t CLS_Loss:{cls_loss.avg:.5f} \t REG_Loss:{reg_loss.avg:.5f} \t Loss:{loss.avg:.5f}'.format(
                     epoch, iter + 1, len(train_loader), lr=cur_lr, batch_time=batch_time, data_time=data_time,
                     loss=losses, cls_loss=cls_losses, reg_loss=reg_losses))
 

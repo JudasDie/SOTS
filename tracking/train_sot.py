@@ -39,8 +39,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='Train Ocean')
     parser.add_argument('--cfg', type=str, default='experiments/AutoMatch.yaml', help='yaml configure file name')
-    # parser.add_argument('--wandb', action='store_true', help='use wandb to watch training')
-    parser.add_argument('--wandb', default=True, help='use wandb to watch training')
+    parser.add_argument('--wandb', action='store_true', help='use wandb to watch training')
     args = parser.parse_args()
 
     return args

@@ -1,7 +1,7 @@
 COMMON:
   LOG_DIR: 'logs'   # log file
   CHECKPOINT_DIR: 'snapshot'   # checkpoint file
-  GPUS: '0,1,2,3,4,5,6,7'
+  GPUS: '0,1'
 
 MODEL:
   NAME: 'AutoMatch'
@@ -34,6 +34,7 @@ TRAIN:
   PRETRAIN: 'ltm_nas.model'
   LR_POLICY: 'log'
   PRINT_FREQ: 10
+  WANDB_ONLINE: True  # run wandb online
   CLS_WEIGHT: 1
   REG_WEIGHT: 1
   CLIP_GRAD: False

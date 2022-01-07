@@ -6,13 +6,12 @@ Data: 2021.6.23
 import _init_paths
 import os
 import pdb
-import math
-import numpy
+import wandb
 import torch
+import socket
 import pprint
 import argparse
-import numpy as np
-import torch.nn as nn
+from contextlib import nullcontext
 from easydict import EasyDict as edict
 
 import torch.distributed as dist
@@ -31,7 +30,6 @@ from core.trainer.siamese_train import siamese_train as trainer
 
 import torch.backends.cudnn as cudnn
 
-
 eps = 1e-5
 
 
@@ -41,33 +39,14 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description='Train Ocean')
     parser.add_argument('--cfg', type=str, default='experiments/AutoMatch.yaml', help='yaml configure file name')
+    # parser.add_argument('--wandb', action='store_true', help='use wandb to watch training')
+    parser.add_argument('--wandb', default=True, help='use wandb to watch training')
     args = parser.parse_args()
 
     return args
 
 
-def main():
-    # read config
-    print('====> load configs <====')
-    args = parse_args()
-    config = edict(reader.load_yaml(args.cfg))
-    os.environ['CUDA_VISIBLE_DEVICES'] = config.COMMON.GPUS
-    if config.TRAIN.DDP.ISTRUE:
-        dist.init_process_group(backend='nccl', init_method='env://')
-
-    # create logger
-    print('====> create logger <====')
-    logger, _, tb_log_dir = recorder.create_logger(config, config.MODEL.NAME, 'train')
-    # logger.info(pprint.pformat(config))
-    logger.info(config)
-
-    # create tensorboard logger
-    print('====> create tensorboard <====')
-    writer_dict = {
-        'writer': SummaryWriter(log_dir=tb_log_dir),
-        'train_global_steps': 0,
-    }
-
+def epoch_train(config, logger, writer_dict, wandb_instance=None):
     # create model
     print('====> build model <====')
     if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT']:
@@ -117,6 +96,9 @@ def main():
     logger.info(lr_scheduler)
     logger.info('model prepare done')
 
+    if wandb_instance is not None:
+        wandb_instance.watch(model)
+
     for epoch in range(start_epoch, config.TRAIN.END_EPOCH):
         # build dataloader, benefit to tracking
         train_set = data_builder(config)
@@ -145,7 +127,7 @@ def main():
 
         inputs = {'data_loader': train_loader, 'model': model, 'optimizer': optimizer, 'device': device,
                   'epoch': epoch + 1, 'cur_lr': curLR, 'config': config,
-                    'writer_dict': writer_dict, 'logger': logger}
+                    'writer_dict': writer_dict, 'logger': logger, 'wandb_instance': wandb_instance}
 
         model, writer_dict = trainer(inputs)
 
@@ -153,6 +135,45 @@ def main():
         loader.save_model(model, epoch, optimizer, config.MODEL.NAME, config, isbest=False)
 
     writer_dict['writer'].close()
+
+
+def main():
+    # read config
+    print('====> load configs <====')
+    args = parse_args()
+    config = edict(reader.load_yaml(args.cfg))
+    os.environ['CUDA_VISIBLE_DEVICES'] = config.COMMON.GPUS
+    if config.TRAIN.DDP.ISTRUE:
+        dist.init_process_group(backend='nccl', init_method='env://')
+
+    # create logger
+    print('====> create logger <====')
+    logger, _, tb_log_dir = recorder.create_logger(config, config.MODEL.NAME, 'train')
+    # logger.info(pprint.pformat(config))
+    logger.info(config)
+
+    # create tensorboard logger
+    print('====> create tensorboard <====')
+    writer_dict = {
+        'writer': SummaryWriter(log_dir=tb_log_dir),
+        'train_global_steps': 0,
+    }
+
+    if args.wandb:
+        logger.info('use wandb to watch training')
+        my_hostname = socket.gethostname()
+        my_ip = socket.gethostbyname(my_hostname)
+        logger.info('Hostname: {}'.format(my_hostname))
+        logger.info('IP: {}'.format(my_ip))
+        notes = {my_ip: my_hostname}
+        # pdb.set_trace()
+        wandb_instance = recorder.setup_wandb(config, notes)
+        wandb_context = wandb_instance if wandb_instance is not None else nullcontext()
+
+        with wandb_context:
+            epoch_train(config, logger, writer_dict, wandb_instance)
+    else:
+        epoch_train(config, logger, writer_dict, None)
 
 
 if __name__ == '__main__':

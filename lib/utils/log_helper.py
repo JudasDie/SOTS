@@ -6,8 +6,13 @@ Data: 2021.6.23
 import os
 import time
 import math
+import copy
+import wandb
 import logging
 from pathlib import Path
+import subprocess
+import pdb
+_cached_git_status = None
 
 
 def create_logger(cfg, modelFlag='OCEAN', phase='train'):
@@ -42,6 +47,45 @@ def create_logger(cfg, modelFlag='OCEAN', phase='train'):
     tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
 
     return logger, str(final_output_dir), str(tensorboard_log_dir)
+
+
+def setup_wandb(config, notes):
+    '''
+    setup wandb online watching
+    https://wandb.ai/
+    '''
+
+    tags = config.MODEL.NAME
+    mode = 'online' if config.TRAIN.WANDB_ONLINE else 'offline'
+
+    output_dir = config.COMMON.CHECKPOINT_DIR
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    group = None
+    project = None
+    run_id = None
+
+    # pdb.set_trace()
+    project = config.MODEL.NAME
+    time_str = time.strftime('%Y-%m-%d-%H-%M')
+    run_id = '{}_{}.log'.format(tags, time_str)
+
+    network_config = copy.deepcopy(config)
+    config.TRAIN.git_version = get_git_status()
+
+    if config.TRAIN.DDP.ISTRUE:  # TODO: check here for DDP
+        group = run_id
+        run_id = run_id + f'-rank{config.TRAIN.DDP.RANK // config.TRAIN.DDP.local_world_size}.{config.TRAIN.DDP.local_rank}'
+
+    if run_id is not None:
+        if len(run_id) > 128:
+            run_id = run_id[:128]
+            print('warning: run id truncated for wandb limitation')
+
+    wandb_instance = wandb.init(project=project, tags=tags, config=config, force=True, job_type='train', id=run_id, mode=mode, dir=output_dir, group=group, notes=str(notes))
+    return wandb_instance
 
 
 def print_speed(i, i_time, n, logger):
@@ -148,3 +192,49 @@ def sot_benchmark_save(inputs):
                 fin.write(str(x) + '\n')
 
         fin.close()
+
+
+def _get_git_status():
+    """
+    check git version (code from SwinTrack)
+    """
+    global _cached_git_status
+    if _cached_git_status is not None:
+        return _cached_git_status
+    cwd = os.path.dirname(os.path.abspath(__file__))
+
+    def _run(command):
+        return subprocess.check_output(command, cwd=cwd).decode('utf-8').strip()
+    sha = 'N/A'
+    diff = 'clean'
+    branch = 'N/A'
+    try:
+        sha = _run(['git', 'rev-parse', 'HEAD'])
+        subprocess.check_output(['git', 'diff'], cwd=cwd)
+        diff = _run(['git', 'diff-index', 'HEAD'])
+        diff = 'dirty' if diff else 'clean'
+        branch = _run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+    except Exception:
+        pass
+    git_state = sha, diff, branch
+    _cached_git_status = git_state
+    return git_state
+
+
+def get_git_status_message():
+    """
+    check git version (code from SwinTrack)
+    """
+    git_status = _get_git_status()
+    git_diff = git_status[1]
+    if git_diff == 'dirty':
+        git_diff = 'has uncommited changes'
+    message = f'sha: {git_status[0]}, diff: {git_diff}, branch: {git_status[2]}'
+    return message
+
+
+def get_git_status():
+    """
+    check git version (code from SwinTrack)
+    """
+    return '-'.join(_get_git_status())

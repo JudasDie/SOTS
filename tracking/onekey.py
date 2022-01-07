@@ -42,16 +42,16 @@ def main():
         # train_script_name = 'train_{}.py'.format(model_name)
         train_log_name = '{0}_train.{1}.log'.format(model_name, time.strftime("%Y-%m-%d_%H:%M:%S"))
 
-        print('python ./tracking/train_sot.py --cfg {0} 2>&1 | tee logs/{1}'
+        print('python ./tracking/train_sot.py --cfg {0} --wandb 2>&1 | tee logs/{1}'
                   .format(args.cfg, train_log_name))
 
         if not DDP:
-            os.system('python ./tracking/train_sot.py --cfg {0}  | tee logs/{1}'
+            os.system('python ./tracking/train_sot.py --cfg {0} --wandb | tee logs/{1}'
                     .format(args.cfg, train_log_name))
         else:
             print('====> use DDP for training <====')
             gpu_nums = len([int(i) for i in commonINFO.GPUS.split(',')])
-            os.system('python -m torch.distributed.launch --nproc_per_node={0} ./tracking/train_sot.py --cfg {1}  | tee logs/{2}'
+            os.system('python -m torch.distributed.launch --nproc_per_node={0} ./tracking/train_sot.py --cfg {1} --wandb | tee logs/{2}'
                       .format(gpu_nums, args.cfg, train_log_name))
 
         print('[*] Train End Time: {}'.format(time.strftime("%Y-%m-%d %H:%M:%S")))

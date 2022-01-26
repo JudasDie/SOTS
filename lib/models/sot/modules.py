@@ -759,7 +759,7 @@ class LTM(nn.Module):
         if 6 in used or used is None:
             feats.append(self.PC(xf, zf))
         if 7 in used or used is None:
-            feats.append(self.CAT(xf, ROI))
+            feats.append(self.Concat(xf, ROI))
 
         feats2 = torch.cat(feats, dim=1)
         merge = F.sigmoid(self.merge2)

@@ -45,15 +45,12 @@ class Concat(nn.Module):
         self.t_embed = nn.Conv2d(inchannels, outchannels, 1)  # embeeding for template feature
         self.down = nn.Conv2d(outchannels * 2, outchannels, 1)  # embeeding for template feature
 
-    def forward(self, xf, zf=None, target=None, zf_mask=None):
-        # xf: [B, C, H, W]
-        # zf: [B, C, H, W]
-        # zf_mask: [B, H, W]
+    def forward(self, xf, zf):
 
         xf2 = self.s_embed(xf)
         B, C, H, W = xf2.size()
 
-        zf2 = self.t_embed(target)
+        zf2 = self.t_embed(zf)
         zf2 = zf2.repeat(1, 1, H, W)
 
         merge = torch.cat((xf2, zf2), dim=1)

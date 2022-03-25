@@ -38,7 +38,7 @@ TRAIN:
 
   DDP:
     ISTRUE: False  # torch distributed data parallel, default: False, normal data parallel
-    RANK: 0
+    LOCAL_RANK: 0
 
   DATASET:
     WHICH_USE: ['GOT10K']

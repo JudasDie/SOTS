@@ -41,8 +41,7 @@ TRAIN:
 
   DDP:
     ISTRUE: False  # torch distributed data parallel, default: False, normal data parallel
-    RANK: 0
-
+    LOCAL_RANK: 0
 
   WARMUP:
     IFNOT: True

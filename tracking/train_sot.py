@@ -40,12 +40,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train Ocean')
     parser.add_argument('--cfg', type=str, default='experiments/AutoMatch.yaml', help='yaml configure file name')
     parser.add_argument('--wandb', action='store_true', help='use wandb to watch training')
+    parser.add_argument("--local_rank", type=int, default=-1)
     args = parser.parse_args()
 
     return args
 
 
-def epoch_train(config, logger, writer_dict, wandb_instance=None):
+def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
     # create model
     print('====> build model <====')
     if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT']:
@@ -57,6 +58,12 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None):
     model = model.cuda()
     logger.info(model)
     model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True, addhead=True)    # load pretrain
+
+    # resume or not
+    if config.TRAIN.RESUME:   # resume
+        model, optimizer, start_epoch, arch = loader.restore_from(model, optimizer, config.TRAIN.RESUME)
+    else:
+        start_epoch = config.TRAIN.START_EPOCH
 
     # get optimizer
     if not config.TRAIN.START_EPOCH == config.TRAIN.UNFIX_EPOCH and not config.MODEL.NAME in ['SiamDW', 'SiamFC']:
@@ -72,26 +79,23 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None):
     print('==========check trainable parameters==========')
     trainable_params = loader.check_trainable(model, logger)           # print trainable params info
 
-    # resume or not
-    if config.TRAIN.RESUME:   # resume
-        model, optimizer, start_epoch, arch = loader.restore_from(model, optimizer, config.TRAIN.RESUME)
-    else:
-        start_epoch = config.TRAIN.START_EPOCH
-
-    # parallel
+    # create parallel
     gpus = [int(i) for i in config.COMMON.GPUS.split(',')]
     gpu_num = world_size = len(gpus)  # or use world_size = torch.cuda.device_count()
     gpus = list(range(0, gpu_num))
 
     logger.info('GPU NUM: {:2d}'.format(len(gpus)))
 
-    device = torch.device('cuda:{}'.format(gpus[0]) if torch.cuda.is_available() else 'cpu')
     if not config.TRAIN.DDP.ISTRUE:
+        device = torch.device('cuda:{}'.format(gpus[0]) if torch.cuda.is_available() else 'cpu')
         model = DataParallel(model, device_ids=gpus).to(device)
     else:
-        rank = config.TRAIN.DDP.RANK
-        model = DistributedDataParallel(model, device_ids=[rank], output_device=rank)
+        local_rank = config.TRAIN.DDP.LOCAL_RANK if args.local_rank == -1 else args.local_rank
+        device = torch.device("cuda", local_rank)
+        model = model.to(device)
+        model = DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
+    
     logger.info(lr_scheduler)
     logger.info('model prepare done')
 
@@ -105,9 +109,10 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None):
             train_loader = DataLoader(train_set, batch_size=config.TRAIN.BATCH * gpu_num, num_workers=config.TRAIN.WORKERS,
                                       pin_memory=True, sampler=None, drop_last=True)
         else:
-            sampler = DistributedSampler(train_set, num_replicas=world_size, rank=rank, shuffle=True, seed=42)
-            train_loader = DataLoader(train_set, batch_size=config.TRAIN.BATCH * gpu_num, shuffle=False,
-                                      num_workers=config.WORKERS, sampler=sampler, pin_memory=True, drop_last=True)
+            sampler = DistributedSampler(train_set, num_replicas=world_size, rank=local_rank, shuffle=True, seed=42)
+            
+            train_loader = DataLoader(train_set, batch_size=config.TRAIN.BATCH, shuffle=False,
+                                      num_workers=config.TRAIN.WORKERS, sampler=sampler, pin_memory=True, drop_last=True)
 
         # check if it's time to train backbone
         if epoch == config.TRAIN.UNFIX_EPOCH:
@@ -131,7 +136,11 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None):
         model, writer_dict = trainer(inputs)
 
         # save model
-        loader.save_model(model, epoch, optimizer, config.MODEL.NAME, config, isbest=False)
+        if not config.TRAIN.DDP.ISTRUE:
+            loader.save_model(model, epoch, optimizer, config.MODEL.NAME, config, isbest=False)
+        elif dist.get_rank() == 0:
+            loader.save_model(model, epoch, optimizer, config.MODEL.NAME, config, isbest=False)
+        
 
     writer_dict['writer'].close()
 
@@ -142,7 +151,10 @@ def main():
     args = parse_args()
     config = edict(reader.load_yaml(args.cfg))
     os.environ['CUDA_VISIBLE_DEVICES'] = config.COMMON.GPUS
+    
     if config.TRAIN.DDP.ISTRUE:
+        local_rank = config.TRAIN.DDP.LOCAL_RANK if args.local_rank == -1 else args.local_rank
+        torch.cuda.set_device(local_rank)
         dist.init_process_group(backend='nccl', init_method='env://')
 
     # create logger
@@ -170,9 +182,9 @@ def main():
         wandb_context = wandb_instance if wandb_instance is not None else nullcontext()
 
         with wandb_context:
-            epoch_train(config, logger, writer_dict, wandb_instance)
+            epoch_train(config, logger, writer_dict, wandb_instance, args)
     else:
-        epoch_train(config, logger, writer_dict, None)
+        epoch_train(config, logger, writer_dict, None, args)
 
 
 if __name__ == '__main__':

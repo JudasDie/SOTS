@@ -69,6 +69,10 @@ In root path $SOTS,
 python tracking/onekey.py --cfg experiments/AutoMatch.yaml
 ```
 
+if you want to use DDP, please change `DDP` in `experiments/xx.yaml` to `True`
+```
+python -m torch.distributed.launch --nproc_per_node $GPU_NUMS trackng/train_sot.py
+```
 
 This script integrates **train**, **epoch test** and **tune**. It is suggested to run them one by one when you are not familiar with our whole framework (modify the key `ISTRUE` in `$SOTS/experiments/XX.yaml`). When you know this framework well, simply run this one-key script.
 

@@ -66,7 +66,7 @@ def create_dataloader(root, path, imgsz, batch_size, stride, opt, augment=False,
                                       state=state)
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers])  # number of workers
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
+    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle=True) if rank != -1 else None
 
     def _init_fn(seed):
         return np.random.seed(seed)
@@ -75,7 +75,7 @@ def create_dataloader(root, path, imgsz, batch_size, stride, opt, augment=False,
                                              batch_size=batch_size,
                                              num_workers=nw,
                                              worker_init_fn=_init_fn(2020),
-                                             shuffle=True,
+                                             shuffle=True if rank == -1 else False,
                                              sampler=train_sampler,
                                              pin_memory=True,
                                              collate_fn=LoadImagesAndLabels.collate_fn)

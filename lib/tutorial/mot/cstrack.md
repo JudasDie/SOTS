@@ -211,6 +211,13 @@ please modify `TRAIN` in `experiments/CSTrack.yaml` to meet your needs.
 python train_mot.py  -cfg experiments/CSTrack.yaml --device 0                                                                             ../lib/dataset/mot/cfg/mot17_hf.json #train on the half of MOT17 training set
 ```
 
+for DDP
+```
+python -m torch.distributed.launch --nproc_per_node=$NUM_GPUS tracking/train_mot.py
+```
+
+- Please double check your `BATCH_SIZE` setting.
+
 ## References
 ```
 [1] Z. Wang, L. Zheng, et al. Towards real-time multi object tracking. ECCV2020.

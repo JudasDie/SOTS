@@ -250,7 +250,7 @@ def epoch_train(opt):
 
     # DDP mode
     if cuda and rank != -1:
-        model = DDP(model, device_ids=[opt.args.local_rank], output_device=(opt.args.local_rank))
+        model = DDP(model, device_ids=[opt.args.local_rank], output_device=(opt.args.local_rank), find_unused_parameters=True)
 
     # Model parameters
     opt.TRAIN.CLS_WEIGHT *= nc / 80.  # scale coco-tuned hyp['cls'] to current dataset
@@ -425,7 +425,7 @@ def epoch_train(opt):
             if ema is not None:
                 ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride'])
             final_epoch = epoch + 1 == epochs
-            if True:  # Calculate mAP
+            if rank in [-1, 0]:  # Calculate mAP
                 results, maps, times = eval.test(
                                                  batch_size=batch_size,
                                                  imgsz=opt.TRAIN.IMG_SIZE,
@@ -460,7 +460,7 @@ def epoch_train(opt):
 
             # save model
             logger.info('save model ...')
-            if True:
+            if rank in [-1, 0]:
                 with open(results_file, 'r') as f:  # create checkpoint
                     ckpt = {'epoch': epoch,
                             'best_fitness': best_fitness,
@@ -493,6 +493,7 @@ if __name__ == '__main__':
         raise Exception('Please set the config file for tracking test!')
 
     opt.args = args
+
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
 
@@ -534,9 +535,10 @@ if __name__ == '__main__':
 
     # DDP mode
     if opt.args.local_rank != -1:
-        assert torch.cuda.device_count() > opt.local_rank
-        torch.cuda.set_device(opt.local_rank)
-        device = torch.device('cuda', opt.local_rank)
+        assert torch.cuda.device_count() > opt.args.local_rank
+        torch.cuda.set_device(opt.args.local_rank)
+        device = torch.device('cuda', opt.args.local_rank)
+        opt.device = device
         dist.init_process_group(backend='nccl', init_method='env://')  # distributed backend
         assert opt.TRAIN.BATCH_SIZE % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.TRAIN.BATCH_SIZE //= opt.world_size
@@ -553,21 +555,21 @@ if __name__ == '__main__':
         opt.tb_writer = tb_writer
 
     # wandb setup
-    try:
-        logger.info('use wandb to watch training')
-        my_hostname = socket.gethostname()
-        my_ip = socket.gethostbyname(my_hostname)
-        logger.info('Hostname: {}'.format(my_hostname))
-        logger.info('IP: {}'.format(my_ip))
-        notes = {my_ip: my_hostname}
+    # try:
+    #     logger.info('use wandb to watch training')
+    #     my_hostname = socket.gethostname()
+    #     my_ip = socket.gethostbyname(my_hostname)
+    #     logger.info('Hostname: {}'.format(my_hostname))
+    #     logger.info('IP: {}'.format(my_ip))
+    #     notes = {my_ip: my_hostname}
+    #
+    #     wandb_instance = recorder.setup_wandb(opt, notes)
+    #     wandb_context = wandb_instance if wandb_instance is not None else nullcontext()
+    #     opt.wandb_instance = wandb_instance
+    #     with wandb_context:
+    #         epoch_train(opt)
+    # except:
+    #     epoch_train(opt)
 
-        wandb_instance = recorder.setup_wandb(opt, notes)
-        wandb_context = wandb_instance if wandb_instance is not None else nullcontext()
-        opt.wandb_instance = wandb_instance
-        with wandb_context:
-            epoch_train(opt)
-    except:
-        epoch_train(opt)
-
-
+    epoch_train(opt)
 

@@ -15,6 +15,22 @@ import pdb
 _cached_git_status = None
 
 
+def simple_logger(name='root'):
+    formatter = logging.Formatter(
+        # fmt='%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s')
+        fmt='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+    return logger
+
+logger = simple_logger('root')
+
+
 def create_logger(cfg, modelFlag='OCEAN', phase='train'):
     '''
     creat log file for training
@@ -48,6 +64,11 @@ def create_logger(cfg, modelFlag='OCEAN', phase='train'):
 
     return logger, str(final_output_dir), str(tensorboard_log_dir)
 
+def set_logging(rank=-1):
+    logging.basicConfig(
+        format="%(message)s",
+        level=logging.INFO if rank in [-1, 0] else logging.WARN)
+
 
 def setup_wandb(config, notes):
     '''
@@ -55,10 +76,10 @@ def setup_wandb(config, notes):
     https://wandb.ai/
     '''
 
-    tags = config.MODEL.NAME
+    tags = config.MODEL.NAME if hasattr(config.MODEL, 'NAME') else config.MODEL.Name
     mode = 'online' if config.TRAIN.WANDB_ONLINE else 'offline'
 
-    output_dir = config.COMMON.CHECKPOINT_DIR
+    output_dir = config.COMMON.CHECKPOINT_DIR if hasattr(config.COMMON, 'CHECKPOINT_DIR')  else config.args.output_dir
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -68,16 +89,20 @@ def setup_wandb(config, notes):
     run_id = None
 
     # pdb.set_trace()
-    project = config.MODEL.NAME
+    project = tags
     time_str = time.strftime('%Y-%m-%d-%H-%M')
     run_id = '{}_{}.log'.format(tags, time_str)
 
-    network_config = copy.deepcopy(config)
+    # network_config = copy.deepcopy(config)
     config.TRAIN.git_version = get_git_status()
 
-    if config.TRAIN.DDP.ISTRUE:  # TODO: check here for DDP
+    DDP = config.TRAIN.DDP if hasattr(config.TRAIN, 'DDP') else config.args.local_rank !=-1
+    RANK = config.TRAIN.DDP.RANK if hasattr(config.TRAIN, 'DDP') else config.args.local_rank
+    local_world_size = config.TRAIN.DDP.local_world_size if hasattr(config.TRAIN, 'DDP') else config.world_size
+
+    if DDP:  # TODO: check here for DDP
         group = run_id
-        run_id = run_id + f'-rank{config.TRAIN.DDP.RANK // config.TRAIN.DDP.local_world_size}.{config.TRAIN.DDP.local_rank}'
+        run_id = run_id + f'-rank{RANK // local_world_size}.{RANK}'
 
     if run_id is not None:
         if len(run_id) > 128:
@@ -99,6 +124,43 @@ def print_speed(i, i_time, n, logger):
     remaining_min = math.floor(remaining_time / 60 - remaining_day * 1440 - remaining_hour * 60)
     logger.info('Progress: %d / %d [%d%%], Speed: %.3f s/iter, ETA %d:%02d:%02d (D:H:M)\n' % (i, n, i/n*100, average_time, remaining_day, remaining_hour, remaining_min))
     logger.info('\nPROGRESS: {:.2f}%\n'.format(100 * i / n))
+
+
+class Timer(object):
+    """A simple timer."""
+    def __init__(self):
+        self.total_time = 0.
+        self.calls = 0
+        self.start_time = 0.
+        self.diff = 0.
+        self.average_time = 0.
+
+        self.duration = 0.
+
+    def tic(self):
+        # using time.time instead of time.clock because time time.clock
+        # does not normalize for multithreading
+        self.start_time = time.time()
+
+    def toc(self, average=True):
+        self.diff = time.time() - self.start_time
+        self.total_time += self.diff
+        self.calls += 1
+        self.average_time = self.total_time / self.calls
+        if average:
+            self.duration = self.average_time
+        else:
+            self.duration = self.diff
+        return self.duration
+
+    def clear(self):
+        self.total_time = 0.
+        self.calls = 0
+        self.start_time = 0.
+        self.diff = 0.
+        self.average_time = 0.
+        self.duration = 0.
+
 
 
 class AverageMeter(object):
@@ -192,6 +254,41 @@ def sot_benchmark_save(inputs):
                 fin.write(str(x) + '\n')
 
         fin.close()
+
+
+def mot_benchmark_save(filename, results, data_type):
+    """
+    save mot evaluation results
+    :param filename:
+    :param results:
+    :param data_type:
+    :return:
+    """
+    num = 0
+    id = []
+    if data_type == 'MOTChallenge':
+        save_format = '{frame},{id},{x1},{y1},{w},{h},1,-1,-1,-1\n'
+    elif data_type == 'kitti':
+        save_format = '{frame} {id} pedestrian 0 0 -10 {x1} {y1} {x2} {y2} -10 -10 -10 -1000 -1000 -1000 -10\n'
+    else:
+        raise ValueError(data_type)
+
+    with open(filename, 'w') as f:
+        for frame_id, tlwhs, track_ids in results:
+            if data_type == 'kitti':
+                frame_id -= 1
+            for tlwh, track_id in zip(tlwhs, track_ids):
+                if track_id < 0:
+                    continue
+                x1, y1, w, h = tlwh
+                x2, y2 = x1 + w, y1 + h
+                line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h)
+                f.write(line)
+                num += 1
+                if track_id not in id:
+                    id += [track_id]
+    logger.info('save results to {}'.format(filename))
+    return num, len(id)
 
 
 def _get_git_status():

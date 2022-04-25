@@ -5,11 +5,13 @@ Data: 2021.6.23
 '''
 
 import os
+import cv2
 import json
 import glob
 import numpy as np
 from os.path import join
 from os.path import join, realpath, dirname, exists
+import utils.tracking_helper as image_helper
 import pdb
 
 class load_sot_benchmark():
@@ -444,3 +446,90 @@ class load_sot_benchmark():
             info[video] = {'image_files': image_files, 'gt': gt, 'name': video}
 
         return info
+
+
+
+# ------------------------- MOT ----------------------------
+
+class load_mot_benchmark:  # for inference
+    """
+    load evaluation MOT videos
+    supported benchmarks: MOT Challenge
+    """
+    def __init__(self, path, img_size=(1088, 608), val_hf=False):
+        # supported = ['MOT15test', 'MOT15val', 'MOT16test', 'MOT16val', 'MOT17test', 'MOT17val', 'MOT20test', 'MOT20val']
+        # if benchmark not in supported: raise ValueError('{0} is not supported for evaluation, '
+        #                                                 'pls update codes to support {0}'.format(benchmark))
+
+        """
+        load mot benchmark for evaluation
+        :param path: video images' path
+        :param img_size: input image size for the tracker (width, height)
+        :param val_hf:
+        return: RGB images
+        """
+        if os.path.isdir(path):
+            image_format = ['.jpg', '.jpeg', '.png', '.tif']
+            self.files = sorted(glob.glob('%s/*.*' % path))
+            self.files = list(filter(lambda x: os.path.splitext(x)[1].lower() in image_format, self.files))
+        elif os.path.isfile(path):
+            self.files = [path]
+
+        self.frame_id = 0
+        if val_hf == 1:
+            self.files = self.files[:int(len(self.files)*0.5)+1]
+        if val_hf == 2:
+            self.frame_id = int(len(self.files)*0.5)+1
+            self.files = self.files[int(len(self.files)*0.5)+1:]
+        self.nF = len(self.files)  # number of image files
+        self.width = img_size[0]
+        self.height = img_size[1]
+        self.count = 0
+
+        assert self.nF > 0, 'No images found in ' + path
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if self.count == self.nF: raise StopIteration
+
+        img_path = self.files[self.count]
+
+        # Read image
+        img0 = cv2.imread(img_path)  # BGR
+        assert img0 is not None, 'Failed to load ' + img_path
+
+        # Padded resize
+        img, _, _, _ = image_helper.letterbox_jde(img0, height=self.height, width=self.width)
+
+        # Normalize RGB
+        img = img[:, :, ::-1].transpose(2, 0, 1)
+        img = np.ascontiguousarray(img, dtype=np.float32)
+        img /= 255.0
+
+        # cv2.imwrite(img_path + '.letterbox.jpg', 255 * img.transpose((1, 2, 0))[:, :, ::-1])  # save letterbox image
+        return img_path, img, img0, self.frame_id
+
+    def __getitem__(self, idx):
+        idx = idx % self.nF
+        img_path = self.files[idx]
+
+        # Read image
+        img0 = cv2.imread(img_path)  # BGR
+        assert img0 is not None, 'Failed to load ' + img_path
+
+        # Padded resize
+        img, _, _, _ = image_helper.letterbox_jde(img0, height=self.height, width=self.width)
+
+        # Normalize RGB
+        img = img[:, :, ::-1].transpose(2, 0, 1)
+        img = np.ascontiguousarray(img, dtype=np.float32)
+        img /= 255.0
+
+        return img_path, img, img0
+
+    def __len__(self):
+        return self.nF

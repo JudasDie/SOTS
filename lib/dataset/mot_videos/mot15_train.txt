@@ -1,0 +1,10 @@
+KITTI-13
+KITTI-17
+ETH-Bahnhof
+ETH-Sunnyday
+PETS09-S2L1
+TUD-Campus
+TUD-Stadtmitte
+ADL-Rundle-6
+ADL-Rundle-8
+ETH-Pedcross2

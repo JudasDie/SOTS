@@ -3,12 +3,207 @@ Author: Zhipeng Zhang (zpzhang1995@gmail.com)
 Function: supporting functions during tracking phase
 Data: 2021.6.23
 '''
+import os
+import os.path as osp
 import cv2
 import math
 import torch
 import numpy as np
 from .box_helper import *
+from .log_helper import logger
+import pdb
 
+
+# ----------------------------- MOT -------------------------------
+def parser_mot_train_data(cfg):
+    """
+    parser training and validation data
+    :param cfg:
+    :return:
+    """
+    mode = cfg.TRAIN.DATASET.WHICH_MODE
+    train_use, val_use = cfg.TRAIN.DATASET.CONFIG[mode].TRAIN_USE, cfg.TRAIN.DATASET.CONFIG[mode].VAL_USE
+    train_set, val_set = dict(), dict()
+
+    cur_path = osp.dirname(__file__)
+    for data in train_use:
+        train_set[data] = osp.join(cur_path, '../dataset/mot_imgs/{}'.format(data.replace('_', '.')))
+
+    for data in val_use:
+        val_set[data] = osp.join(cur_path, '../dataset/mot_imgs/{}'.format(data.replace('_', '.')))
+
+    return train_set, val_set
+
+
+def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
+    """
+     Resize image to a 32-pixel-multiple rectangle https://github.com/ultralytics/yolov3/issues/232
+    :param img:
+    :param new_shape:
+    :param color:
+    :param auto:
+    :param scaleFill:
+    :param scaleup:
+    :return:
+    """
+    shape = img.shape[:2]  # current shape [height, width]
+    if isinstance(new_shape, int):
+        new_shape = (new_shape, new_shape)
+
+    # Scale ratio (new / old)
+    r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+    if not scaleup:  # only scale down, do not scale up (for better test mAP)
+        r = min(r, 1.0)
+
+    # Compute padding
+    ratio = r, r  # width, height ratios
+    new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+    dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
+    if auto:  # minimum rectangle
+        dw, dh = np.mod(dw, 64), np.mod(dh, 64)  # wh padding
+    elif scaleFill:  # stretch
+        dw, dh = 0.0, 0.0
+        new_unpad = (new_shape[1], new_shape[0])
+        ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
+
+    dw /= 2  # divide padding into 2 sides
+    dh /= 2
+
+    if shape[::-1] != new_unpad:  # resize
+        img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
+    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+    return img, ratio, (dw, dh)
+
+
+def letterbox_jde(img, height=608, width=1088, color=(127.5, 127.5, 127.5)):
+    """
+    resize and pad a image to network input size
+    :param img:
+    :param height: height for network input
+    :param width: width for network input
+    :param color:
+    :return:
+    """
+
+    shape = img.shape[:2]  # shape = [height, width]
+    ratio = min(float(height) / shape[0], float(width) / shape[1])
+    new_shape = (round(shape[1] * ratio), round(shape[0] * ratio))  # new_shape = [width, height]
+    dw = (width - new_shape[0]) / 2  # width padding
+    dh = (height - new_shape[1]) / 2  # height padding
+    top, bottom = round(dh - 0.1), round(dh + 0.1)
+    left, right = round(dw - 0.1), round(dw + 0.1)
+    img = cv2.resize(img, new_shape, interpolation=cv2.INTER_AREA)  # resized, no border
+    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # padded rectangular
+    return img, ratio, dw, dh
+
+
+def scale_img(img, ratio=1.0, same_shape=False):  # img(16,3,256,416), r=ratio
+    # scales img(bs,3,y,x) by ratio
+    if ratio == 1.0:
+        return img
+    else:
+        h, w = img.shape[2:]
+        s = (int(h * ratio), int(w * ratio))  # new size
+        img = F.interpolate(img, size=s, mode='bilinear', align_corners=False)  # resize
+        if not same_shape:  # pad/crop img
+            gs = 32  # (pixels) grid size
+            h, w = [math.ceil(x * ratio / gs) * gs for x in (h, w)]
+        return F.pad(img, [0, w - s[1], 0, h - s[0]], value=0.447)  # value = imagenet mean
+
+
+def update_cstrack_hypers(opt, args, config):
+    """
+    update hyper-parameters of mot models
+    :param opt: edict, output
+    :param args: script arg-parser input
+    :param config: .yaml file configures (experiments/xx.yaml)
+    :return: opt
+    """
+
+    opt.args = args
+    opt.cfg = config
+
+    # copy all keys and values of cfg to opt
+    for k, v in config.items():
+        opt[k] = v
+
+    cfg_hypers = config.TEST.COMMON_HYPER if args.benchmark is None else config.TEST[args.benchmark]  # special benchmarks in .yaml file
+
+    opt.nms_thres = args.nms_thres if args.nms_thres is not None else cfg_hypers.nms_thres
+    opt.conf_thres = args.conf_thres if args.conf_thres is not None else cfg_hypers.conf_thres
+    opt.track_buffer = args.track_buffer if args.track_buffer is not None else cfg_hypers.track_buffer
+    opt.min_box_area = args.min_box_area if args.min_box_area is not None else cfg_hypers.min_box_area
+    opt.img_size = args.img_size if args.img_size is not None else tuple(cfg_hypers.img_size)
+    opt.mean = args.mean if args.mean is not None else cfg_hypers.mean
+    opt.std = args.std if args.std is not None else cfg_hypers.std
+    
+    return opt
+
+
+def get_mot_benchmark_path(opt):
+    curr_path = osp.realpath(osp.dirname(__file__))
+
+    if opt.args.val_mot15:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot15_train.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT15/train')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT15/images/train')
+        benchmark_name = 'MOT15'
+
+    elif opt.args.test_mot15:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot15_test.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT15/test')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT15/images/test')
+        benchmark_name = 'MOT15'
+
+    elif opt.args.val_mot16:  # training sequences
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot16_train.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT16/train')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT16/images/train')
+        benchmark_name = 'MOT16'
+
+    elif opt.args.test_mot16:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot16_test.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT16/test')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT16/images/test')
+        benchmark_name = 'MOT16'
+
+    elif opt.args.val_mot17:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot17_train.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT17/train')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT17/images/train')
+        benchmark_name = 'MOT17'
+
+    elif opt.args.test_mot17:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot17_test.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT17/test')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT17/images/test')
+        benchmark_name = 'MOT17'
+
+    elif opt.args.val_mot20:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot20_train.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT20/train')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT20/images/train')
+        benchmark_name = 'MOT20'
+
+    elif opt.args.test_mot20:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', 'mot20_test.txt')).readlines()
+        data_root = osp.join(opt.args.data_dir, 'MOT20/test')
+        if not osp.isdir(data_root): data_root = os.path.join(opt.args.data_dir, 'MOT20/images/test')
+        benchmark_name = 'MOT20'
+
+    else:
+        seqs = open(osp.join(curr_path, '../dataset/mot_videos', '{}.txt').format(opt.args.benchmark)).readlines()
+        data_root = osp.join(opt.args.data_dir, opt.args.benchmark)
+        benchmark_name = opt.args.benchmark
+
+    logger.info('testing videos: '.format(seqs))
+    logger.info('data path: '.format(data_root))
+
+    return seqs, data_root, benchmark_name
+
+# ----------------------------- SOT -------------------------------
 def siam_crop(crop_input, mode='torch'):
     """
     cropping image for tracking in Siamese framework

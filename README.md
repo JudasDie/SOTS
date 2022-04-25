@@ -3,6 +3,10 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
+:boom: [CNNInMo/TransInMo](https://arxiv.org/abs/2201.02526) is accepted by IJCAI2022. The code will be released in this repo.
+
+:boom: [CSTrack](https://pubmed.ncbi.nlm.nih.gov/35412982/) is accepted by IEEE TIP. 
+
 :boom: [OMC](https://arxiv.org/abs/2104.09441) is accepted by AAAI2022. The training and testing code has been released in this codebase.
 
 :boom: [AutoMatch](https://openaccess.thecvf.com/content/ICCV2021/papers/Zhang_Learn_To_Match_Automatic_Matching_Network_Design_for_Visual_Tracking_ICCV_2021_paper.pdf) is accepted by ICCV2021. The training and testing code has been released in this codebase.

@@ -96,7 +96,16 @@ def main():
         config = edict(reader.load_yaml(args.cfg))
     else:
         raise Exception('Please set the config file for tracking test!')
-
+    
+    # prepare video
+    if args.dataset is None:
+        dataset_loader = datafactory(config.TEST.DATA)
+    else:
+        config.TEST.DATA = args.dataset
+        dataset_loader = datafactory(args.dataset)
+    dataset = dataset_loader.load()
+    video_keys = list(dataset.keys()).copy()
+    
     if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT']:
         siam_tracker = tracker_builder.SiamTracker(config)
         siambuilder = builder.Siamese_builder(config)
@@ -118,14 +127,6 @@ def main():
     siam_net.eval()
     siam_net = siam_net.cuda()
 
-    # prepare video
-    if args.dataset is None:
-        dataset_loader = datafactory(config.TEST.DATA)
-    else:
-        config.TEST.DATA = args.dataset
-        dataset_loader = datafactory(args.dataset)
-    dataset = dataset_loader.load()
-    video_keys = list(dataset.keys()).copy()
 
     for video in video_keys:
         inputs = {'tracker': siam_tracker, 'network': siam_net, 'video_info': dataset[video], 'args': args, 'config': config}

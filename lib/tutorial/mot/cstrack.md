@@ -55,7 +55,7 @@ python test_mot.py     --weights $ckpt_path
 
 ### Prepare data and models
 
-1. Download the pretrained model which pretrain in COCO dataset [[Google Drive]](https://drive.google.com/file/d/1qJHNlEXPVirDVmWL7hHeU4-P9amWHJHR/view?usp=sharing)[[Baidu NetDisk(ba1g)]](https://pan.baidu.com/s/1S04i6-yxQ3QHtfUDDtd1Kw) to `$CSTrack/weights`.
+1. Download the pretrained model which pretrain in COCO dataset [[Google Drive]](https://drive.google.com/file/d/1qJHNlEXPVirDVmWL7hHeU4-P9amWHJHR/view?usp=sharing)[[Baidu NetDisk(ba1g)]](https://pan.baidu.com/s/1S04i6-yxQ3QHtfUDDtd1Kw) to `$SOTS/snapshot`.
 
 2. We provide several relevant datasets for training and evaluating the CSTrack. 
 Annotations are provided in a unified format and all the datasets have the following structure:

@@ -8,7 +8,7 @@ import cv2
 import math
 import random
 import numpy as np
-import utils.box_helper as boxhelper
+import lib.utils.box_helper as boxhelper
 
 # -------------------- MOT --------------------
 def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):
@@ -213,6 +213,7 @@ def aug_apply(bbox, param, shape, inv=False, rd=False):
     """
     if not inv:
         center = boxhelper.corner2center(bbox)
+        # print(center, isinstance(center, boxhelper.Center))
         original_center = center
 
         real_param = {}

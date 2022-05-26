@@ -237,7 +237,7 @@ def sot_benchmark_save(inputs):
                 else:
                     p_bbox = x.copy()
                     fin.write(','.join([str(i) for i in p_bbox]) + '\n')
-        elif config.TEST.DATA in ['OTB2013', 'OTB2015', 'LASOTTEST', 'LASOT']:
+        elif config.TEST.DATA in ['OTB2013', 'OTB2015', 'LASOTTEST', 'LASOT', 'LASOTEXT']:
             for x in boxes:
                 p_bbox = x.copy()
                 fin.write(
@@ -246,6 +246,11 @@ def sot_benchmark_save(inputs):
             for x in boxes:
                 p_bbox = x.copy()
                 fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+        else:
+            for x in boxes:
+                p_bbox = x.copy()
+                fin.write(','.join([str(i) for idx, i in enumerate(p_bbox)]) + '\n')
+
 
     fin.close()
     if config.TEST.DATA == 'GOT10KTEST' and time_path is not None:

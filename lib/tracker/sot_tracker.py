@@ -4,13 +4,15 @@ Function: build sot tracker
 Data: 2021.6.23
 '''
 import os
+import math
 import cv2
 import yaml
 import torch
 import numpy as np
 import torch.nn.functional as F
-import utils.read_file as reader
-import utils.tracking_helper as tracking_helper
+import torchvision.transforms.functional as tvisf
+import lib.utils.read_file as reader
+import lib.utils.tracking_helper as tracking_helper
 from pprint import pprint
 import pdb
 
@@ -27,11 +29,12 @@ class SiamTracker(object):
 
         # parse inputs
         im, self.target_pos, self.target_sz, self.model = inputs['image'], inputs['pos'], inputs['sz'], inputs['model']
-
         p = DefaultConfig()
         self.im_h = im.shape[0]
         self.im_w = im.shape[1]
         p.update({'MODEL_NAME': self.config.MODEL.NAME})
+        p.update({'exemplar_size': self.config.TRAIN.TEMPLATE_SIZE})
+        p.update({'instance_size': self.config.TRAIN.SEARCH_SIZE})
         p.renew()
         
         # hyperparameters
@@ -54,7 +57,6 @@ class SiamTracker(object):
             p.update(hp)
             p.renew()
 
-
             # for small object (from DaSiamRPN released)
             if 'big_sz' in hp:
                 if ((self.target_sz[0] * self.target_sz[1]) / float(self.im_h * self.im_w)) < 0.004:
@@ -66,11 +68,16 @@ class SiamTracker(object):
 
         self.p = p
 
-#        print([p.scale_step_FC, p.lr, p.scale_penalty_FC, p.window_influence])       
-#        print([p.penalty_k, p.lr, p.window_influence])       
         if self.config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch']:
             self.window = np.outer(np.hanning(p.score_size), np.hanning(p.score_size))
             self.grids(p)
+        elif self.config.MODEL.NAME in ['TransInMo']:
+            hanning = np.hanning(p.score_size)
+            window = np.outer(hanning, hanning)
+            self.window = window.flatten()
+        elif self.config.MODEL.NAME in ['CNNInMo']:
+            hanning = np.hanning(p.score_size)
+            self.window = np.outer(hanning, hanning)
         else:
             self.window = np.outer(np.hanning(int(p.score_size) * int(p.response_up_FC)),
                               np.hanning(int(p.score_size) * int(p.response_up_FC)))
@@ -83,7 +90,7 @@ class SiamTracker(object):
         self.avg_chans = np.mean(im, axis=(0, 1))
 
         crop_input = {'image': im, 'pos': self.target_pos, 'model_sz': self.p.exemplar_size, 'original_sz': s_z, 'avg_chans': self.avg_chans}
-        z_crop_meta = tracking_helper.siam_crop(crop_input)
+        z_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo'])
         z_crop, z_crop_info = z_crop_meta['image_tensor'], z_crop_meta['meta_info']
 
         if self.config.MODEL.NAME in ['AutoMatch']:
@@ -99,6 +106,14 @@ class SiamTracker(object):
             self.model.template({'template': z_crop.unsqueeze(0).cuda(), 'template_mask': mask_crop.unsqueeze(0).cuda(),
                                  'target_box': target_box})
         else:
+            if self.config.MODEL.NAME in ['TransInMo']:
+                scale_z = self.p.exemplar_size / s_z
+                self.scale_z = scale_z
+                z_crop = z_crop.float().mul(1.0 / 255.0).clamp(0.0, 1.0)
+                self.mean = [0.485, 0.456, 0.406]
+                self.std = [0.229, 0.224, 0.225]
+                self.inplace = False
+                z_crop = tvisf.normalize(z_crop, self.mean, self.std, self.inplace)
             self.model.template({'template': z_crop.unsqueeze(0).cuda()})
 
         # for SiamFC: additional parameters
@@ -124,27 +139,39 @@ class SiamTracker(object):
             x_crop_meta = tracking_helper.siamfc_pyramid_crop(crop_input)
         else:
             # crop image in subsequent frames
-            hc_z = self.target_sz[1] + self.p.context_amount * sum(self.target_sz)
-            wc_z = self.target_sz[0] + self.p.context_amount * sum(self.target_sz)
-            s_z = np.sqrt(wc_z * hc_z)
-            scale_z = self.p.exemplar_size / s_z
-            d_search = (self.p.instance_size - self.p.exemplar_size) / 2  # slightly different from rpn++
-            pad = d_search / scale_z
-            s_x = s_z + 2 * pad
+            if self.config.MODEL.NAME in ['TransInMo']:
+                hc_x = self.target_sz[1] + (4 - 1) * self.p.context_amount * sum(self.target_sz)
+                wc_x = self.target_sz[0] + (4 - 1) * self.p.context_amount * sum(self.target_sz)
+                s_x = math.ceil(math.sqrt(wc_x * hc_x))
+            else:
+                hc_z = self.target_sz[1] + self.p.context_amount * sum(self.target_sz)
+                wc_z = self.target_sz[0] + self.p.context_amount * sum(self.target_sz)
+                s_z = np.sqrt(wc_z * hc_z)
+                scale_z = self.p.exemplar_size / s_z
+
+                if self.config.MODEL.NAME in ['CNNInMo']:
+                    self.scale_z = scale_z
+                    s_x = s_z * (self.p.instance_size / self.p.exemplar_size)
+                else:
+                    d_search = (self.p.instance_size - self.p.exemplar_size) / 2  # slightly different from rpn++
+                    pad = d_search / scale_z
+                    s_x = s_z + 2 * pad
+                target_sz_incrop = self.target_sz * scale_z
             crop_input = {'image': im, 'pos': self.target_pos, 'model_sz': self.p.instance_size,
                           'original_sz': tracking_helper.python2round(s_x),
                           'avg_chans': self.avg_chans}
-            x_crop_meta = tracking_helper.siam_crop(crop_input)
+            x_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo'])
 
-            target_sz_incrop = self.target_sz * scale_z
+
         x_crop, x_crop_info = x_crop_meta['image_tensor'], x_crop_meta['meta_info']
-
         # tracking and update state
         if self.config.MODEL.NAME in ['SiamFC', 'SiamDW']:
             x_crop = x_crop.cuda()
         else:
+            if self.config.MODEL.NAME in ['TransInMo']:
+                x_crop = x_crop.float().mul(1.0 / 255.0).clamp(0.0, 1.0)
+                x_crop = tvisf.normalize(x_crop, self.mean, self.std, self.inplace)
             x_crop = x_crop.unsqueeze(0).cuda()
-
         outputs = self.model.track({'search': x_crop})
 
         if self.config.MODEL.NAME in ['AutoMatch']:
@@ -250,8 +277,100 @@ class SiamTracker(object):
             self.p.s_x = max(self.p.min_s_x, min(self.p.max_s_x, (1 - self.p.lr) * self.p.s_x + self.p.lr * scaled_instance[best_scale]))
             self.target_sz = [(1 - self.p.lr) * self.target_sz[0] + self.p.lr * scaled_target[0][0][best_scale],
                          (1 - self.p.lr) * self.target_sz[1] + self.p.lr * scaled_target[1][0][best_scale]]
+        elif self.config.MODEL.NAME in ['TransInMo']:
+            def _convert_score(score):
+                score = score.permute(2, 1, 0).contiguous().view(2, -1).permute(1, 0)
+                score = F.softmax(score, dim=1).data[:, 0].cpu().numpy()
+                return score
 
-            
+            def _convert_bbox(delta):
+                delta = delta.permute(2, 1, 0).contiguous().view(4, -1)
+                delta = delta.data.cpu().numpy()
+                return delta
+
+            score = _convert_score(cls_score)
+            pred_bbox = _convert_bbox(bbox_pred)
+            penalty_k = self.config.TEST.HYPERS[self.dataset]['penalty_k']
+            if penalty_k != 0:
+                penalty = self.cal_penalty(pred_bbox * s_x, penalty_lk=penalty_k)
+                score = score * penalty
+
+            win_lr = self.config.TEST.HYPERS[self.dataset]['window_influence']
+            hp_lr = self.config.TEST.HYPERS[self.dataset]['lr']
+            pscore = score * (1-win_lr) + self.window * win_lr
+
+            best_idx = np.argmax(pscore)
+            len_r_c = int(math.sqrt(pscore.shape[0]))
+            pscore = pscore.reshape(len_r_c,len_r_c)
+            r_max, c_max = np.unravel_index(pscore.argmax(), pscore.shape)
+            bbox = pred_bbox[:, best_idx]
+            bbox = bbox * s_x
+            cx = bbox[0] + self.target_pos[0] - s_x / 2
+            cy = bbox[1] + self.target_pos[1] - s_x / 2
+            width = bbox[2]
+            height = bbox[3]
+
+            if penalty_k != 0:
+                s_c = self.change(
+                    self.sz(width, height) / self.sz(self.target_sz[0] * self.scale_z,
+                                                     self.target_sz[1] * self.scale_z))
+                r_c = self.change((self.target_sz[0] / self.target_sz[1]) / (width / height))
+
+                penalty = np.exp(-(r_c * s_c - 1) * penalty_k)
+                lr = penalty * np.max(pscore) * hp_lr
+                width = lr * width + (1 - lr) * self.target_sz[0]
+                height = lr * height + (1 - lr) * self.target_sz[1]
+            else:
+                width = hp_lr * width + (1 - hp_lr) * self.target_sz[0]
+                height = hp_lr * height + (1 - hp_lr) * self.target_sz[1]
+
+            # update state
+            self.target_pos = np.array([cx, cy])
+            self.target_sz = np.array([width, height])
+        elif self.config.MODEL.NAME in ['CNNInMo']:
+            cls = self._convert_cls(outputs['cls']).squeeze()
+            cen = outputs['cen'].data.cpu().numpy()
+            cen = (cen - cen.min()) / cen.ptp()
+            cen = cen.squeeze()
+            lrtbs = outputs['reg'].data.cpu().numpy().squeeze()
+
+            upsize = (self.config.TEST.SCORE_SIZE - 1) * self.config.TEST.STRIDE + 1
+            penalty = self.cal_penalty_lrtb(lrtbs, self.config.TEST.HYPERS[self.dataset]['penalty_k'])
+            pscore = penalty * cls * cen
+            r_max, c_max = self.config.TEST.SCORE_SIZE//2, self.config.TEST.SCORE_SIZE//2
+            if self.config.TEST.hanming:
+                hp_score = pscore * (1 - self.config.TEST.HYPERS[self.dataset]['window_influence']) + self.window * self.config.TEST.HYPERS[self.dataset]['window_influence']
+            else:
+                hp_score = pscore
+
+            hp_score_up = cv2.resize(hp_score, (upsize, upsize), interpolation=cv2.INTER_CUBIC)
+            p_score_up = cv2.resize(pscore, (upsize, upsize), interpolation=cv2.INTER_CUBIC)
+            cls_up = cv2.resize(cls, (upsize, upsize), interpolation=cv2.INTER_CUBIC)
+            lrtbs = np.transpose(lrtbs, (1, 2, 0))
+            lrtbs_up = cv2.resize(lrtbs, (upsize, upsize), interpolation=cv2.INTER_CUBIC)
+
+            scale_score = upsize / self.config.TEST.SCORE_SIZE
+            # get center
+            max_r_up, max_c_up, new_cx, new_cy = self.getCenter(hp_score_up, p_score_up, scale_score, lrtbs)
+            # get w h
+            ave_w = (lrtbs_up[max_r_up, max_c_up, 0] + lrtbs_up[max_r_up, max_c_up, 2]) / self.scale_z
+            ave_h = (lrtbs_up[max_r_up, max_c_up, 1] + lrtbs_up[max_r_up, max_c_up, 3]) / self.scale_z
+
+            s_c = self.change(self.sz(ave_w, ave_h) / self.sz(self.target_sz[0] * self.scale_z, self.target_sz[1] * self.scale_z))
+            r_c = self.change((self.target_sz[0] / self.target_sz[1]) / (ave_w / ave_h))
+            penalty = np.exp(-(r_c * s_c - 1) * self.config.TEST.HYPERS[self.dataset]['penalty_k'])
+            lr = penalty * cls_up[max_r_up, max_c_up] * self.config.TEST.HYPERS[self.dataset]['lr']
+            new_width = lr * ave_w + (1 - lr) * self.target_sz[0]
+            new_height = lr * ave_h + (1 - lr) * self.target_sz[1]
+
+            # clip boundary
+            # cx = bbox_clip(new_cx, 0, img.shape[1])
+            # cy = bbox_clip(new_cy, 0, img.shape[0])
+            # width = bbox_clip(new_width, 0, img.shape[1])
+            # height = bbox_clip(new_height, 0, img.shape[0])
+            self.target_pos = np.array([new_cx, new_cy])
+            self.target_sz = np.array([new_width, new_height])
+
         self.target_pos[0] = max(0, min(self.im_w, self.target_pos[0]))
         self.target_pos[1] = max(0, min(self.im_h, self.target_pos[1]))
         self.target_sz[0] = max(10, min(self.im_w, self.target_sz[0]))
@@ -326,23 +445,94 @@ class SiamTracker(object):
         sz2 = (wh[0] + pad) * (wh[1] + pad)
         return np.sqrt(sz2)
 
+    def cal_penalty(self, pred_bbox, penalty_lk):
+        bboxes_w = pred_bbox[2, :]
+        bboxes_h = pred_bbox[3, :]
+        s_c = self.change(
+            self.sz(bboxes_w, bboxes_h) / self.sz(self.target_sz[0] * self.scale_z, self.target_sz[1] * self.scale_z))
+        r_c = self.change((self.target_sz[0] / self.target_sz[1]) / (bboxes_w / bboxes_h))
+        penalty = np.exp(-(r_c * s_c - 1) * penalty_lk)
+        return penalty
+
+    def cal_penalty_lrtb(self, lrtbs, penalty_lk):
+        bboxes_w = lrtbs[0, :, :] + lrtbs[2, :, :]
+        bboxes_h = lrtbs[1, :, :] + lrtbs[3, :, :]
+        s_c = self.change(self.sz(bboxes_w, bboxes_h) / self.sz(self.target_sz[0]*self.scale_z, self.target_sz[1]*self.scale_z))
+        r_c = self.change((self.target_sz[0] / self.target_sz[1]) / (bboxes_w / bboxes_h))
+        penalty = np.exp(-(r_c * s_c - 1) * penalty_lk)
+        return penalty
+
+    def accurate_location(self, max_r_up, max_c_up):
+        dist = int((self.p.instance_size - (self.config.TEST.SCORE_SIZE - 1) * 8) / 2)
+        max_r_up += dist
+        max_c_up += dist
+        p_cool_s = np.array([max_r_up, max_c_up])
+        disp = p_cool_s - (np.array([self.p.instance_size, self.p.instance_size]) - 1.) / 2.
+        return disp
+
+    def coarse_location(self, hp_score_up, p_score_up, scale_score, lrtbs):
+        upsize = (self.config.TEST.SCORE_SIZE - 1) * self.config.TEST.STRIDE + 1
+        max_r_up_hp, max_c_up_hp = np.unravel_index(hp_score_up.argmax(), hp_score_up.shape)
+        max_r = int(round(max_r_up_hp / scale_score))
+        max_c = int(round(max_c_up_hp / scale_score))
+        max_r = tracking_helper.bbox_clip(max_r, 0, self.config.TEST.SCORE_SIZE-1)
+        max_c = tracking_helper.bbox_clip(max_c, 0, self.config.TEST.SCORE_SIZE-1)
+        bbox_region = lrtbs[max_r, max_c, :]
+        min_bbox = int(self.config.TEST.REGION_S * self.p.exemplar_size)
+        max_bbox = int(self.config.TEST.REGION_L * self.p.exemplar_size)
+        l_region = int(min(max_c_up_hp, tracking_helper.bbox_clip(bbox_region[0], min_bbox, max_bbox)) / 2.0)
+        t_region = int(min(max_r_up_hp, tracking_helper.bbox_clip(bbox_region[1], min_bbox, max_bbox)) / 2.0)
+
+        r_region = int(min(upsize - max_c_up_hp, tracking_helper.bbox_clip(bbox_region[2], min_bbox, max_bbox)) / 2.0)
+        b_region = int(min(upsize - max_r_up_hp, tracking_helper.bbox_clip(bbox_region[3], min_bbox, max_bbox)) / 2.0)
+        mask = np.zeros_like(p_score_up)
+        mask[max_r_up_hp - t_region:max_r_up_hp + b_region + 1, max_c_up_hp - l_region:max_c_up_hp + r_region + 1] = 1
+        p_score_up = p_score_up * mask
+        return p_score_up
+
+    def getCenter(self,hp_score_up, p_score_up, scale_score,lrtbs):
+        # corse location
+        score_up = self.coarse_location(hp_score_up, p_score_up, scale_score, lrtbs)
+        # accurate location
+        max_r_up, max_c_up = np.unravel_index(score_up.argmax(), score_up.shape)
+        disp = self.accurate_location(max_r_up,max_c_up)
+        disp_ori = disp / self.scale_z
+        new_cx = disp_ori[1] + self.target_pos[0]
+        new_cy = disp_ori[0] + self.target_pos[1]
+        return max_r_up, max_c_up, new_cx, new_cy
+
+    def _convert_cls(self, cls):
+        cls = F.softmax(cls[:,:,:,:], dim=1).data[:,1,:,:].cpu().numpy()
+        return cls
+
 
 class DefaultConfig(object):
-    MODEL_NAME = 'Ocean'
+    # MODEL_NAME = 'AutoMatch'  # 'Ocean'
+    # exemplar_size = 127  # 127
+    # instance_size = 255  # 255
+
+    # MODEL_NAME = 'TransInMo'
+    # exemplar_size = 128
+    # instance_size = 256
+
+    MODEL_NAME = 'CNNInMo'
+    exemplar_size = 127
+    instance_size = 255
+
     penalty_k = 0.034
     window_influence = 0.284
     lr = 0.313
     windowing = 'cosine'
-    exemplar_size = 127
-    instance_size = 255
     total_stride = 8
 
     if MODEL_NAME in ['Ocean', 'OceanPlus']:
         score_size = (instance_size - exemplar_size) // total_stride + 1 + 8
-    elif MODEL_NAME in ['SiamDW', 'SiamFC']:
+    elif MODEL_NAME in ['SiamDW', 'SiamFC', 'CNNInMo']:
         score_size = (instance_size - exemplar_size) // total_stride + 1
-    elif self.MODEL_NAME in ['AutoMatch']:
+    elif MODEL_NAME in ['AutoMatch']:
         score_size = (instance_size - exemplar_size) // total_stride + 14
+    elif MODEL_NAME in ['TransInMo']:
+        score_size = (instance_size - exemplar_size) // total_stride * 2
     else:
         raise Exception('Unknown model!')
 
@@ -368,5 +558,9 @@ class DefaultConfig(object):
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1
         elif self.MODEL_NAME in ['AutoMatch']:
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1 + 14 # for ++
+        elif self.MODEL_NAME in ['TransInMo']:
+            self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride * 2
+        elif self.MODEL_NAME in ['CNNInMo']:
+            self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1 + 8
         else:
             raise Exception('Unknown model!')

@@ -6,7 +6,7 @@ Data: 2021.6.23
 
 import importlib
 import torch.nn as nn
-from models.sot.siaminference import SiamInference
+from lib.models.sot.siaminference import SiamInference
 
 class Siamese_builder(nn.Module):
     def __init__(self, cfg):
@@ -39,7 +39,11 @@ class Siamese_builder(nn.Module):
         return SiamInference(archs=inputs)
 
     def build_backbone(self, backbone_type):
-        if 'ResNet' in backbone_type:
+        if 'ResNet50_cross' in backbone_type:
+            bk_module = importlib.import_module('models.backbone.ResNet_cross')
+            bk_func = getattr(bk_module, backbone_type)
+            backbone = bk_func(self_attn_plus=self.cfg.MODEL.BACKBONE.self_attn_plus, num_heads=self.cfg.MODEL.BACKBONE.num_heads, group=self.cfg.MODEL.BACKBONE.group)
+        elif 'ResNet' in backbone_type:
             bk_module = importlib.import_module('models.backbone.ResNet')
             bk_func = getattr(bk_module, backbone_type)
 
@@ -47,18 +51,27 @@ class Siamese_builder(nn.Module):
                 backbone = bk_func(used_layers=self.cfg.MODEL.BACKBONE.LAYER)
             else:
                 raise Exception('Not implemented backbone network!')
+        elif 'Swin_Wrapper' in backbone_type:
+            bk_module = importlib.import_module('models.backbone.Swin')
+            bk_func = getattr(bk_module, backbone_type)
+            backbone = bk_func(self.cfg)
         else:
             raise Exception('Not implemented backbone network!')
 
         return backbone
 
     def build_neck(self, neck_type):
-        if neck_type is None or neck_type== 'None':
+        if neck_type is None or neck_type == 'None':
             return None
 
-        neck_module = importlib.import_module('models.sot.neck')
-        neck_func = getattr(neck_module, neck_type)
-        neck = neck_func(in_channels=self.cfg.MODEL.NECK.IN_CHANNEL, out_channels=self.cfg.MODEL.NECK.OUT_CHANNEL)
+        if 'Trans_Fuse' in neck_type:
+            neck_module = importlib.import_module('models.sot.'+self.cfg.MODEL.NECK.MODULE)  # trans_fuse/trans_fuse_win
+            neck_func = getattr(neck_module, neck_type)
+            neck = neck_func(self.cfg.MODEL)
+        else:
+            neck_module = importlib.import_module('models.sot.neck')
+            neck_func = getattr(neck_module, neck_type)
+            neck = neck_func(in_channels=self.cfg.MODEL.NECK.IN_CHANNEL, out_channels=self.cfg.MODEL.NECK.OUT_CHANNEL)
 
         return neck
 
@@ -71,6 +84,10 @@ class Siamese_builder(nn.Module):
                              towernum=self.cfg.MODEL.HEAD.TOWERNUM, align=self.cfg.MODEL.HEAD.ALIGN)
         elif self.cfg.MODEL.NAME == 'SiamDW':
             head = head_func()
+        elif self.cfg.MODEL.NAME == 'TransInMo':
+            head = head_func(self.cfg.MODEL)
+        elif self.cfg.MODEL.NAME == 'CNNInMo':
+            head = head_func(in_channels=self.cfg.MODEL.HEAD.IN_CHANNEL, num_classes=self.cfg.MODEL.HEAD.NUM_CLASSES, num_convs=self.cfg.MODEL.HEAD.NUM_CONVS)
         else:
             head = head_func(in_channels=self.cfg.MODEL.HEAD.IN_CHANNEL,
                                   out_channels=self.cfg.MODEL.HEAD.IN_CHANNEL)

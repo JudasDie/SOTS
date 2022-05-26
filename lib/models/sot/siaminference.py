@@ -9,6 +9,9 @@ import importlib
 import torch.nn as nn
 import pdb
 
+from lib.utils.box_helper import matcher
+from lib.models.sot.modules import NestedTensor, nested_tensor_from_tensor, nested_tensor_from_tensor_2
+
 
 class SiamInference(nn.Module):
     def __init__(self, archs=None):
@@ -34,19 +37,23 @@ class SiamInference(nn.Module):
             raise Exception('Not set config!')
 
         loss_module = importlib.import_module('models.sot.loss')
-        cls_loss_type = self.cfg.MODEL.LOSS.CLS_LOSS
-        reg_loss_type = self.cfg.MODEL.LOSS.REG_LOSS
-
-        self.cls_loss = getattr(loss_module, cls_loss_type)
-
-        if self.cfg.MODEL.NAME in ['AutoMatch']:
-            cls_loss_add_type = self.cfg.MODEL.LOSS.CLS_LOSS_ADDITIONAL
-            self.cls_loss_additional = getattr(loss_module, cls_loss_add_type)
-
-        if reg_loss_type is None or reg_loss_type == 'None':
-            pass
+        if self.cfg.MODEL.NAME in ['CNNInMo']:
+            loss_type = getattr(loss_module, self.cfg.MODEL.LOSS.LOSS_FUNC)
+            self.loss_func = loss_type(output_size=self.cfg.MODEL.LOSS.OUTPUT_SIZE)
         else:
-            self.reg_loss = getattr(loss_module, reg_loss_type)
+            cls_loss_type = self.cfg.MODEL.LOSS.CLS_LOSS
+            reg_loss_type = self.cfg.MODEL.LOSS.REG_LOSS
+
+            self.cls_loss = getattr(loss_module, cls_loss_type)
+
+            if self.cfg.MODEL.NAME in ['AutoMatch']:
+                cls_loss_add_type = self.cfg.MODEL.LOSS.CLS_LOSS_ADDITIONAL
+                self.cls_loss_additional = getattr(loss_module, cls_loss_add_type)
+
+            if reg_loss_type is None or reg_loss_type == 'None':
+                pass
+            else:
+                self.reg_loss = getattr(loss_module, reg_loss_type)
 
     def forward(self, inputs):
         """
@@ -61,8 +68,16 @@ class SiamInference(nn.Module):
         template, search = inputs['template'], inputs['search']
 
         # backbone
-        zfs = self.backbone(template)
-        xfs = self.backbone(search)
+        if self.cfg.MODEL.NAME in ['TransInMo']:
+            if not isinstance(template, NestedTensor):
+                template = nested_tensor_from_tensor(template)
+            if not isinstance(search, NestedTensor):
+                search = nested_tensor_from_tensor(search)
+            zf, pos_z = self.backbone(template)
+            xf, pos_x = self.backbone(search)
+        else:
+            zfs = self.backbone(template)
+            xfs = self.backbone(search)
 
         if self.cfg.MODEL.NAME in ['Ocean']:
             zf, xf = zfs['p3'], xfs['p3']
@@ -71,6 +86,14 @@ class SiamInference(nn.Module):
         elif self.cfg.MODEL.NAME in ['AutoMatch']:
             zf_conv4, zf_conv3 = zfs['p3'], zfs['p2']
             xf_conv4, xf_conv3 = xfs['p3'], xfs['p2']
+        elif self.cfg.MODEL.NAME in ['TransInMo']:
+            src_x, mask_x = xf[-1].decompose()
+            assert mask_x is not None
+            src_z, mask_z = zf[-1].decompose()
+            assert mask_z is not None
+        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+            zf = zfs
+            xf = xfs
         else:
             raise Exception('Not implemented model!')
 
@@ -83,6 +106,11 @@ class SiamInference(nn.Module):
             elif self.cfg.MODEL.NAME in ['AutoMatch']:
                 zfs4, zfs3 = self.neck(zf_conv4, zf_conv3)
                 xfs4, xfs3 = self.neck(xf_conv4, xf_conv3)
+            elif self.cfg.MODEL.NAME in ['TransInMo']:
+                fused_zx = self.neck(src_z, mask_z, src_x, mask_x, pos_z[-1], pos_x[-1])
+            elif self.cfg.MODEL.NAME in ['CNNInMo']:
+                zf = self.neck(zf)
+                xf = self.neck(xf)
 
         # head
         # not implement Ocean object-aware version, if you need, pls find it in researchmm/TracKit
@@ -93,6 +121,8 @@ class SiamInference(nn.Module):
                            }
 
             cls_preds, reg_preds = self.head(head_inputs)
+        elif self.cfg.MODEL.NAME in ['TransInMo']:
+            preds = self.head(fused_zx)
         else:
             preds = self.head(xf, zf)
 
@@ -118,6 +148,19 @@ class SiamInference(nn.Module):
 
             cls_loss = self.cls_loss(cls_pred, cls_label)
             loss = {'cls_loss': cls_loss}
+        elif self.cfg.MODEL.NAME in ['TransInMo']:
+            cls_label, search_bbox = inputs['cls_label'], inputs['search_bbox']
+            cls_pred, reg_pred = preds['cls'], preds['reg']
+
+            search_bbox = search_bbox / self.cfg.TRAIN.SEARCH_SIZE
+            indices = matcher(reg_pred, search_bbox)
+            reg_loss = self.reg_loss(reg_pred, search_bbox, indices)
+            cls_loss = self.cls_loss(cls_pred, cls_label, indices, self.cfg)
+            loss = {'cls_loss': cls_loss, 'reg_loss': reg_loss}
+        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+            cls_label, search_bbox = inputs['cls_label'], inputs['search_bbox']
+            cls_loss, reg_loss, cen_loss = self.loss_func(preds, cls_label, search_bbox)
+            loss = {'cls_loss': cls_loss, 'reg_loss': reg_loss, 'cen_loss': cen_loss}
         else:
             raise Exception('not supported model')
 
@@ -133,7 +176,12 @@ class SiamInference(nn.Module):
 
         template = inputs['template']
 
-        zfs = self.backbone(template)
+        if self.cfg.MODEL.NAME in ['TransInMo']:
+            if not isinstance(template, NestedTensor):
+                template = nested_tensor_from_tensor_2(template)
+            zf, pos_z = self.backbone(template)
+        else:
+            zfs = self.backbone(template)
 
         if self.cfg.MODEL.NAME in ['Ocean']:
             zf = zfs['p3']
@@ -141,6 +189,11 @@ class SiamInference(nn.Module):
             zf = zfs['p2']
         elif self.cfg.MODEL.NAME in ['AutoMatch']:
             zf_conv4, zf_conv3 = zfs['p3'], zfs['p2']
+        elif self.cfg.MODEL.NAME in ['TransInMo']:
+            src_z, mask_z = zf[-1].decompose()
+            assert mask_z is not None
+        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+            zf = zfs
         else:
             raise Exception('Not implemented model!')
 
@@ -150,7 +203,10 @@ class SiamInference(nn.Module):
                 self.zf = zf_neck['crop']
             elif self.cfg.MODEL.NAME in ['AutoMatch']:
                 self.zfs4, self.zfs3 = self.neck(zf_conv4, zf_conv3)
-
+            elif self.cfg.MODEL.NAME in ['TransInMo']:
+                self.src_z, self.mask_z, self.pos_z = src_z, mask_z, pos_z
+            elif self.cfg.MODEL.NAME in ['CNNInMo']:
+                self.zf = self.neck(zf)
         else:
             self.zf = zf
 
@@ -172,7 +228,12 @@ class SiamInference(nn.Module):
         """
 
         search = inputs['search']
-        xfs = self.backbone(search)
+        if self.cfg.MODEL.NAME in ['TransInMo']:
+            if not isinstance(search, NestedTensor):
+                search = nested_tensor_from_tensor_2(search)
+            xf, pos_x = self.backbone(search)
+        else:
+            xfs = self.backbone(search)
 
         if self.cfg.MODEL.NAME in ['Ocean']:
             xf = xfs['p3']
@@ -180,6 +241,11 @@ class SiamInference(nn.Module):
             xf = xfs['p2']
         elif self.cfg.MODEL.NAME in ['AutoMatch']:
             xf_conv4, xf_conv3 = xfs['p3'], xfs['p2']
+        elif self.cfg.MODEL.NAME in ['TransInMo']:
+            src_x, mask_x = xf[-1].decompose()
+            assert mask_x is not None
+        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+            xf = xfs
         else:
             raise Exception('Not implemented model!')
 
@@ -199,6 +265,12 @@ class SiamInference(nn.Module):
                 # record some feats for zoom
                 self.record = [cls_preds['xf_conv4'].detach(), cls_preds['xf_conv3'].detach(),
                                cls_preds['zf_conv4'].detach(), cls_preds['zf_conv3'].detach()]  # [xf_conv4, xf_conv3, zf_conv4, zf_conv3]
+            elif self.cfg.MODEL.NAME in ['TransInMo']:
+                fused_zx = self.neck(self.src_z, self.mask_z, src_x, mask_x, self.pos_z[-1], pos_x[-1])
+                preds = self.head(fused_zx)
+            elif self.cfg.MODEL.NAME in ['CNNInMo']:
+                xf = self.neck(xf)
+                preds = self.head(xf, self.zf)
             else:
                 xf_neck = self.neck(xf, crop=False)
                 xf = xf_neck['ori']

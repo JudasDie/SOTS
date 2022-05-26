@@ -269,3 +269,40 @@ def _to_polygon(polys):
         return to_polygon(polys)
     else:
         return [to_polygon(t) for t in polys]
+
+
+def matcher(reg_pred, search_bbox):
+    """ Performs the matching
+    Returns:
+        A list of size batch_size, containing tuples of (index_i, index_j) where:
+            - index_i is the indices of the selected predictions (in order)
+            - index_j is the indices of the corresponding selected targets (in order),
+              and it is always 0, because single target tracking has only one target per image
+        For each batch element, it holds:
+            len(index_i) = len(index_j)
+    """
+    indices = []
+    bs, num_queries = reg_pred.shape[:2]
+    for i in range(bs):
+        xmin, ymin, xmax, ymax = search_bbox[i]
+        xmin = xmin.item()
+        ymin = ymin.item()
+        xmax = xmax.item()
+        ymax = ymax.item()
+        len_feature = int(np.sqrt(num_queries))
+        Xmin = int(np.ceil(xmin*len_feature))
+        Ymin = int(np.ceil(ymin*len_feature))
+        Xmax = int(np.ceil(xmax*len_feature))
+        Ymax = int(np.ceil(ymax*len_feature))
+        if Xmin == Xmax:
+            Xmax = Xmax+1
+        if Ymin == Ymax:
+            Ymax = Ymax+1
+        a = np.arange(0, num_queries, 1)
+        b = a.reshape([len_feature, len_feature])
+        c = b[Ymin:Ymax,Xmin:Xmax].flatten()
+        d = np.zeros(len(c), dtype=int)
+        indice = (c,d)
+        indices.append(indice)
+    return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+

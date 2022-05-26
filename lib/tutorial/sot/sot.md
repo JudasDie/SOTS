@@ -14,7 +14,7 @@ export PYTHONPATH=${PYTHONPATH}:$SOTS:$SOTS/lib
 
 
 ### Prepare data and models
-1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1VP9UsBYpqSVbLwXSr6PkHeuUxJjG0QsT?usp=sharing) `$SOTS/snapshot`. (Some tracker may contain multiple pretrained models. Please refer to `readme.txt` in their directories.)
+1. Download the pretrained [PyTorch model](https://drive.google.com/drive/folders/1VP9UsBYpqSVbLwXSr6PkHeuUxJjG0QsT?usp=sharing) to `$SOTS/snapshot`. (Some trackers may contain multiple pretrained models. Please refer to `readme.txt` in their directories.)
 2. Download [json](https://drive.google.com/drive/folders/1iXqDQH6duadH9TIa8GK1oybBAyS9nHbk?usp=sharing) files of testing data and put them in `$SOTS/dataset`.
 3. Download testing data e.g. VOT2019 and put them in `$SOTS/dataset`. Please download each data from their official websites, and the directories should be named like `VOT2019`, `OTB2015`, `GOT10K`, `LASOTTEST` (see `experiment/xx.yaml` for their name of each benchmark).
 
@@ -23,6 +23,8 @@ export PYTHONPATH=${PYTHONPATH}:$SOTS:$SOTS/lib
 In root path `$SOTS`,
 
 ```
+python tracking/test_sot.py --cfg experiments/TransInMo.yaml --resume snapshot/AutoMatch.pth --dataset OTB2015
+or
 python tracking/test_sot.py --cfg experiments/AutoMatch.yaml --resume snapshot/AutoMatch.pth --dataset OTB2015
 or
 python tracking/test_sot.py --cfg experiments/Ocean.yaml --resume snapshot/Ocean.pth --dataset OTB2015

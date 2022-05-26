@@ -8,6 +8,7 @@ import os.path as osp
 import cv2
 import math
 import torch
+import torch.nn.functional as F
 import numpy as np
 from .box_helper import *
 from .log_helper import logger
@@ -204,13 +205,12 @@ def get_mot_benchmark_path(opt):
     return seqs, data_root, benchmark_name
 
 # ----------------------------- SOT -------------------------------
-def siam_crop(crop_input, mode='torch'):
+def siam_crop(crop_input, mode='torch', pysot_crop=False):
     """
     cropping image for tracking in Siamese framework
     """
     im, pos, model_sz, original_sz, avg_chans = crop_input['image'], crop_input['pos'], crop_input['model_sz'], \
                                                 crop_input['original_sz'], crop_input['avg_chans']
-
     if len(im.shape) == 2:
         mask_format = True
     else:
@@ -224,9 +224,13 @@ def siam_crop(crop_input, mode='torch'):
     sz = original_sz
     im_sz = im.shape
     c = (original_sz+1) / 2
-    context_xmin = round(pos[0] - c)
+    if pysot_crop:
+        context_xmin = np.floor(pos[0] - c + 0.5)
+        context_ymin = np.floor(pos[1] - c + 0.5)
+    else:
+        context_xmin = round(pos[0] - c)
+        context_ymin = round(pos[1] - c)
     context_xmax = context_xmin + sz - 1
-    context_ymin = round(pos[1] - c)
     context_ymax = context_ymin + sz - 1
     left_pad = int(max(0., -context_xmin))
     top_pad = int(max(0., -context_ymin))
@@ -258,7 +262,6 @@ def siam_crop(crop_input, mode='torch'):
         else:
             tete_im = np.zeros(im.shape[0:2])
             im_patch_original = im[int(context_ymin):int(context_ymax + 1), int(context_xmin):int(context_xmax + 1), :]
-
         if not np.array_equal(model_sz, original_sz):
             im_patch = cv2.resize(im_patch_original, (model_sz, model_sz))
         else:
@@ -430,3 +433,7 @@ def jitter_shift():
         shift[92:96, 1:3] += minus2
 
     return shift
+
+def bbox_clip(x, min_value, max_value):
+    new_x = max(min_value, min(x, max_value))
+    return new_x

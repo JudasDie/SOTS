@@ -55,7 +55,7 @@ class StepScheduler(LRScheduler):
     '''
     def __init__(self, optimizer, start_lr=0.01, end_lr=None,
                  step=10, mult=0.1, epochs=50, last_epoch=-1, **kwargs):
-        if end_lr is not None:
+        if end_lr is not None and end_lr != 'None':
             if start_lr is None:
                 start_lr = end_lr / (mult ** (epochs // step))
             else:  # for warm up policy
@@ -177,7 +177,7 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
     for param in model.backbone.parameters():
         param.requires_grad = False
     for m in model.backbone.modules():
-        if isinstance(m, nn.BatchNorm2d):
+        if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
             m.eval()
 
     if current_epoch >= cfg.TRAIN.UNFIX_EPOCH:
@@ -186,19 +186,19 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
                 for param in getattr(model.backbone, layer).parameters():
                     param.requires_grad = True
                 for m in getattr(model.backbone, layer).modules():
-                    if isinstance(m, nn.BatchNorm2d):
+                    if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
                         m.train()
         else:    # train all backbone layers
             for param in model.backbone.parameters():
                 param.requires_grad = True
             for m in model.backbone.modules():
-                if isinstance(m, nn.BatchNorm2d):
+                if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
                     m.train()
     else:
         for param in model.backbone.parameters():
             param.requires_grad = False
         for m in model.backbone.modules():
-            if isinstance(m, nn.BatchNorm2d):
+            if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
                 m.eval()
 
     trainable_params = []
@@ -211,9 +211,13 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
     trainable_params += [{'params': model.head.parameters(),
                           'lr': cfg.TRAIN.BASE_LR}]
 
-    optimizer = torch.optim.SGD(trainable_params,
-                                momentum=cfg.TRAIN.MOMENTUM,
-                                weight_decay=cfg.TRAIN.WEIGHT_DECAY)
+    if cfg.MODEL.NAME == 'TransInMo':
+        optimizer = torch.optim.AdamW(trainable_params, weight_decay=cfg.TRAIN.WEIGHT_DECAY)
+        # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 200, gamma=0.316)
+    else:
+        optimizer = torch.optim.SGD(trainable_params,
+                                    momentum=cfg.TRAIN.MOMENTUM,
+                                    weight_decay=cfg.TRAIN.WEIGHT_DECAY)
 
     lr_scheduler = build_lr_scheduler(optimizer, cfg, epochs=cfg.TRAIN.END_EPOCH)
     lr_scheduler.step(cfg.TRAIN.START_EPOCH)

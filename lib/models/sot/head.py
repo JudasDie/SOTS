@@ -191,3 +191,150 @@ class SiamFCCorr(nn.Module):
         else:
             cls = 0.1 * self._conv2d_group(x_f, z_f)
             return {'cls': cls}
+
+
+class MLP(nn.Module):
+    """ Very simple multi-layer perceptron (also called FFN)"""
+
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+        super().__init__()
+        self.num_layers = num_layers
+        h = [hidden_dim] * (num_layers - 1)
+        self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
+
+    def forward(self, x):
+        for i, layer in enumerate(self.layers):
+            x = F.relu(layer(x)) if i < self.num_layers - 1 else layer(x)
+        return x
+
+
+class TransInMoHead(nn.Module):
+    def __init__(self, config):
+        super(TransInMoHead, self).__init__()
+        in_channel = config.HEAD.IN_CHANNEL
+        mid_channel = config.HEAD.MID_CHANNEL
+        layer_num = config.HEAD.LAYER_NUM
+        self.class_embed = MLP(in_channel, mid_channel, 2, layer_num)
+        self.bbox_embed = MLP(in_channel, mid_channel, 4, layer_num)
+
+    def forward(self, fus_feat):
+        outputs_class = self.class_embed(fus_feat)
+        outputs_coord = self.bbox_embed(fus_feat).sigmoid()
+        out = {'cls': outputs_class[-1], 'reg': outputs_coord[-1]}
+        return out
+
+
+def xcorr_depthwise(x, kernel):
+    """depthwise cross correlation
+    """
+    batch = kernel.size(0)
+    channel = kernel.size(1)
+    x = x.view(1, batch*channel, x.size(2), x.size(3))
+    kernel = kernel.view(batch*channel, 1, kernel.size(2), kernel.size(3))
+    out = F.conv2d(x, kernel, groups=batch*channel)
+    out = out.view(batch, channel, out.size(2), out.size(3))
+    return out
+
+
+# SiamCAR Head
+class CARHead(torch.nn.Module):
+    def __init__(self, in_channels=256, num_classes=2, num_convs=4):
+        """
+        Arguments:
+            in_channels (int): number of channels of the input feature
+        """
+        super(CARHead, self).__init__()
+        # TODO: Implement the sigmoid version first.
+        self.xcorr_depthwise = xcorr_depthwise
+        self.down = nn.ConvTranspose2d(in_channels * 3, in_channels, 1, 1)
+
+        cls_tower = []
+        bbox_tower = []
+        for i in range(num_convs):
+            cls_tower.append(
+                nn.Conv2d(
+                    in_channels,
+                    in_channels,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1
+                )
+            )
+            cls_tower.append(nn.GroupNorm(32, in_channels))
+            cls_tower.append(nn.ReLU())
+            bbox_tower.append(
+                nn.Conv2d(
+                    in_channels,
+                    in_channels,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1
+                )
+            )
+            bbox_tower.append(nn.GroupNorm(32, in_channels))
+            bbox_tower.append(nn.ReLU())
+
+        self.add_module('cls_tower', nn.Sequential(*cls_tower))
+        self.add_module('bbox_tower', nn.Sequential(*bbox_tower))
+        self.cls_logits = nn.Conv2d(
+            in_channels, num_classes, kernel_size=3, stride=1,
+            padding=1
+        )
+        self.bbox_pred = nn.Conv2d(
+            in_channels, 4, kernel_size=3, stride=1,
+            padding=1
+        )
+        self.centerness = nn.Conv2d(
+            in_channels, 1, kernel_size=3, stride=1,
+            padding=1
+        )
+
+        # initialization
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        from timm.models.layers import trunc_normal_
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out //= m.groups
+            m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m, nn.BatchNorm2d):
+            m.weight.data.fill_(1.0)
+            m.bias.data.zero_()
+        else:
+            for p in m.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
+
+    def forward(self, xf, zf):
+        features = self.xcorr_depthwise(xf[0], zf[0])
+        for i in range(len(xf) - 1):
+            features_new = self.xcorr_depthwise(xf[i + 1], zf[i + 1])
+            features = torch.cat([features, features_new], 1)
+        features = self.down(features)
+
+        cls_tower = self.cls_tower(features)
+        logits = self.cls_logits(cls_tower)
+        centerness = self.centerness(cls_tower)
+        bbox_reg = torch.exp(self.bbox_pred(self.bbox_tower(features)))
+
+        out = {'cls': logits, 'reg': bbox_reg, 'cen': centerness}
+        return out
+
+
+class Scale(nn.Module):
+    def __init__(self, init_value=1.0):
+        super(Scale, self).__init__()
+        self.scale = nn.Parameter(torch.FloatTensor([init_value]))
+
+    def forward(self, input):
+        return input * self.scale

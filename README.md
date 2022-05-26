@@ -3,7 +3,7 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
-:boom: [CNNInMo/TransInMo](https://arxiv.org/abs/2201.02526) is accepted by IJCAI2022. The code will be released in this repo.
+:boom: [CNNInMo/TransInMo](https://arxiv.org/abs/2201.02526) is accepted by IJCAI2022.
 
 :boom: [CSTrack](https://pubmed.ncbi.nlm.nih.gov/35412982/) is accepted by IEEE TIP. 
 
@@ -26,6 +26,7 @@
 ## Supported Trackers (SOT and MOT)
 
 ### Single-Object Tracking (SOT)
+- [x] [**[IJCAI2022] CNNInMo/TransInMo**](https://arxiv.org/abs/2201.02526)
 - [x] [**[ICCV2021] AutoMatch**](https://openaccess.thecvf.com/content/ICCV2021/papers/Zhang_Learn_To_Match_Automatic_Matching_Network_Design_for_Visual_Tracking_ICCV_2021_paper.pdf)
 - [x] [**[ECCV2020] Ocean and Ocean+**](https://arxiv.org/abs/2006.10721)
 - [x] [**[CVPR2019 Oral] SiamDW**](http://openaccess.thecvf.com/content_CVPR_2019/html/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.html)
@@ -33,7 +34,7 @@
 
 ### Multi-Object Tracking (MOT)
 - [x] [**[AAAI2022] OMC**](https://arxiv.org/abs/2104.09441)
-- [x] [**CSTrack**](https://arxiv.org/pdf/2010.12138) 
+- [x] [**[IEEE TIP] CSTrack**](https://arxiv.org/pdf/2010.12138) 
 
 ## Results Comparison
 - [x] [**Comparison**](https://github.com/JudasDie/Comparison)
@@ -78,10 +79,20 @@ $SOTS
 | <sub>SiamDW<sub>  | <sub>0.670</sub> | <sub>0.429</sub> | <sub>0.386</sub>|<sub>0.348</sub>|<sub>61.1</sub>| <sub>0.521</sub> |<sub>0.500</sub> |<sub>0.241</sub> |<sub>0.583</sub> |<sub>0.536</sub> |
 | <sub>Ocean</sub>   |  <sub>0.676</sub> | <sub>0.615</sub> | <sub>0.517</sub>|<sub>0.421</sub>|<sub>69.2</sub>| <sub>0.553</sub> |<sub>0.638</sub> |<sub>0.323</sub> |<sub>0.585</sub> |<sub>0.621</sub> |
 | <sub>AutoMatch</sub> | <sub>0.714</sub> | <sub>0.652</sub> | <sub>0.583</sub>|<sub>0.472</sub>|<sub>76.0</sub>| <sub>0.606</sub> |<sub>0.668</sub> |<sub>0.322</sub> |<sub>0.634</sub> |<sub>0.644</sub> |
+| <sub>CNNInMo</sub> | <sub>0.703</sub> | <sub>-</sub> | <sub>0.539</sub>|<sub>0.422</sub>|<sub>72.1</sub>| <sub>0.560</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.629</sub> |
+| <sub>TransInMo</sub> | <sub>0.711</sub> | <sub>-</sub> | <sub>0.657</sub>|<sub>0.520</sub>|<sub>81.7</sub>| <sub>0.668</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.690</sub> |
 
 
 
 ## Tracker Details
+### CNNInMo/TransInMo [IJCAI2022]
+**[[Paper]](https://arxiv.org/abs/2201.02526) [[Raw Results]](https://drive.google.com/drive/folders/1HddgSIm6rnSHKyeqSd-i4QR0JUusgkzD?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/sot/sot.md)** <br/>
+CNNInMo/TransInMo introduces a novel mechanism that conducts branch-wise interactions inside the visual tracking backbone network (InBN) via the proposed general interaction modeler (GIM). We show that both CNN and Transformer backbones can benefit from InBN, with which more robust feature representation can be learned. Our method achieves compelling tracking performance by applying the backbones to Siamese tracking.
+
+<img src="https://github.com/JudasDie/SOTS/blob/MOT/demo/TransInMo.jpg" height="500" alt="TransInMo"/><br/>
+
+
+
 ### OMC [AAAI2022]
 **[[Paper]](https://arxiv.org/abs/2104.09441) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/blob/MOT/OMC/lib/tutorial/omc.md)** <br/>
 OMC introduces a double-check mechanism to make the "fake background" be tracked again. Specifically, we design a re-check network as the auxiliary to initial detections. If the target does not exist in the first-check predictions (i.e., the results of object detector), as a potential misclassified target, it has a chance to be restored by the re-check network, which searches targets through mining temporal cues. Note that, the re-check network innovatively expands the role of ID embedding from data association to motion forecasting by effectively propagating previous tracklets to the current frame with a small overhead. Even with multiple tracklets, our re-check network can still propagate with one forward pass by a simple matrix multiplication. Building on a strong baseline CSTrack, we construct a new one-shot tracker and achieve favorable gains.
@@ -150,6 +161,7 @@ https://github.com/StrangerZhang/pysot-toolkit
 ```
 ## Contributors
 - **[Zhipeng Zhang](http://zhipengzhang.cn/)**
+- **[Mingzhe Guo]()**
 - **[Chao Liang](https://github.com/H11zang)**
 
 

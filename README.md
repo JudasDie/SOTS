@@ -89,7 +89,7 @@ $SOTS
 **[[Paper]](https://arxiv.org/abs/2201.02526) [[Raw Results]](https://drive.google.com/drive/folders/10HhdHcrpbnsxnwMlNEDWieDeM9pNiynn?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/sot/sot.md)** <br/>
 CNNInMo/TransInMo introduces a novel mechanism that conducts branch-wise interactions inside the visual tracking backbone network (InBN) via the proposed general interaction modeler (GIM). We show that both CNN and Transformer backbones can benefit from InBN, with which more robust feature representation can be learned. Our method achieves compelling tracking performance by applying the backbones to Siamese tracking.
 
-<img src="https://github.com/JudasDie/SOTS/blob/SOT/demo/TransInMo.jpg" height="500" alt="TransInMo"/><br/>
+<img src="https://github.com/JudasDie/SOTS/blob/SOT/demo/TransInMo.jpg" height="300" alt="TransInMo"/><br/>
 
 
 

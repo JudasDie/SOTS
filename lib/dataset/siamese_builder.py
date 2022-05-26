@@ -38,12 +38,15 @@ class SiameseDataset(Dataset):
         self.stride = cfg.TRAIN.STRIDE
         self.cfg = cfg
 
-        if cfg.MODEL.NAME in [ 'Ocean']:
+        if cfg.MODEL.NAME in ['Ocean', 'CNNInMo']:
             self.score_size = 25
         elif cfg.MODEL.NAME in ['AutoMatch']:
             self.score_size = 31
         elif cfg.MODEL.NAME in ['SiamFC', 'SiamDW']:
             self.score_size = 17
+        elif cfg.MODEL.NAME in ['TransInMo']:
+            self.score_size = 32
+            self.GT_xyxy = False
         else:
             raise Exception('Not implemented model!')
 
@@ -120,10 +123,16 @@ class SiameseDataset(Dataset):
         template = np.array(template)
         search = np.array(search)
 
-        if neg:
-            cls_label = np.zeros((self.score_size, self.score_size))
+        if self.cfg.MODEL.NAME in ['TransInMo']:
+            cls_label = np.array([0])
+            cls_label = torch.tensor(cls_label)
+        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+            cls_label = np.zeros((self.score_size, self.score_size), dtype=np.int64)
         else:
-            cls_label = self._dynamic_label([self.score_size, self.score_size], dag_param.shift)
+            if neg:
+                cls_label = np.zeros((self.score_size, self.score_size))
+            else:
+                cls_label = self._dynamic_label([self.score_size, self.score_size], dag_param.shift)
 
         if self.cfg.MODEL.NAME in ['Ocean', 'AutoMatch']:
             reg_label, reg_weight = self.reg_label(bbox)
@@ -520,6 +529,7 @@ class subData(object):
             self._clean()
             self.num = len(self.labels)  # video numer
 
+        self.num_use = self.num if self.num_use == -1 else self.num_use
         self._shuffle()
 
     def _clean(self):

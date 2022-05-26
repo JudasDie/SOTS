@@ -16,7 +16,7 @@ import math
 
 import torch.nn.functional as F
 from torch import nn, Tensor
-from lib.models.sot.trans_modules import MultiheadAttention
+from models.sot.InMo.trans_modules import MultiheadAttention
 
 
 class FeatureFusionNetwork(nn.Module):

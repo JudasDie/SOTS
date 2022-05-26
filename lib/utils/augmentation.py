@@ -8,7 +8,7 @@ import cv2
 import math
 import random
 import numpy as np
-import lib.utils.box_helper as boxhelper
+import utils.box_helper as boxhelper
 
 # -------------------- MOT --------------------
 def random_perspective(img, targets=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0, border=(0, 0)):

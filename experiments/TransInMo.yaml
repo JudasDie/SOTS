@@ -20,7 +20,7 @@ MODEL:
     DIM: 256
   NECK:
     NAME: "Trans_Fuse"
-    MODULE: 'trans_fuse_win'  # models.sot.[trans_fuse_win / trans_fuse]
+    MODULE: 'trans_fuse'  # models.sot.[trans_fuse_win / trans_fuse]
     WINDOW_SIZE: 16
     HIDDEN_DIM: 256
     DROPOUT: 0.1

@@ -52,6 +52,8 @@ def track(inputs):
     for f, image_file in enumerate(image_files):
         im = cv2.imread(image_file)
         if len(im.shape) == 2: im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+        if config.MODEL.NAME in ['TransInMo']:
+            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
         tic = cv2.getTickCount()
         if f == start_frame:  # init
@@ -106,7 +108,7 @@ def main():
     dataset = dataset_loader.load()
     video_keys = list(dataset.keys()).copy()
     
-    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT']:
+    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo']:
         siam_tracker = tracker_builder.SiamTracker(config)
         siambuilder = builder.Siamese_builder(config)
         siam_net = siambuilder.build()

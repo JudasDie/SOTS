@@ -65,7 +65,7 @@ class Siamese_builder(nn.Module):
             return None
 
         if 'Trans_Fuse' in neck_type:
-            neck_module = importlib.import_module('models.sot.'+self.cfg.MODEL.NECK.MODULE)  # trans_fuse/trans_fuse_win
+            neck_module = importlib.import_module('models.sot.InMo.'+self.cfg.MODEL.NECK.MODULE)  # trans_fuse/trans_fuse_win
             neck_func = getattr(neck_module, neck_type)
             neck = neck_func(self.cfg.MODEL)
         else:

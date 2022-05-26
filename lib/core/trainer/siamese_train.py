@@ -61,9 +61,23 @@ def siamese_train(inputs):
 
         model_loss = model(model_inputs)
         cls_loss = torch.mean(model_loss['cls_loss'])
-        reg_loss = torch.mean(model_loss['reg_loss']) if 'reg_loss' in model_loss.keys() else None
+        # reg_loss = torch.mean(model_loss['reg_loss']) if 'reg_loss' in model_loss.keys() else None
+        if cfg.MODEL.NAME in ['TransInMo']:
+            reg_loss = model_loss['reg_loss']
+            reg_loss['loss_l1'] = torch.mean(reg_loss['loss_l1'])
+            reg_loss['loss_iou'] = torch.mean(reg_loss['loss_iou'])
+        else:
+            reg_loss = torch.mean(model_loss['reg_loss']) if 'reg_loss' in model_loss.keys() else None
 
-        loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + cfg.TRAIN.REG_WEIGHT * reg_loss if reg_loss is not None else cls_loss
+        if cfg.MODEL.NAME in ['TransInMo']:
+            loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + cfg.TRAIN.REG_WEIGHT_L1 * reg_loss[
+                'loss_l1'] + cfg.TRAIN.REG_WEIGHT_IOU * reg_loss['loss_iou']
+        elif cfg.MODEL.NAME in ['CNNInMo']:
+            cen_loss = torch.mean(model_loss['cen_loss'])
+            loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + \
+                cfg.TRAIN.REG_WEIGHT * reg_loss + cfg.TRAIN.CEN_WEIGHT * cen_loss
+        else:
+            loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + cfg.TRAIN.REG_WEIGHT * reg_loss if reg_loss is not None else cls_loss
         loss = torch.mean(loss)
 
         # compute gradient and do update step
@@ -83,7 +97,10 @@ def siamese_train(inputs):
         cls_loss = cls_loss.item()
         cls_losses.update(cls_loss, template.size(0))
 
-        reg_loss = reg_loss.item() if reg_loss is not None else cls_loss
+        if cfg.MODEL.NAME in ['TransInMo']:
+            reg_loss = (reg_loss['loss_l1'] + reg_loss['loss_iou']).item()
+        else:
+            reg_loss = reg_loss.item() if reg_loss is not None else cls_loss
         reg_losses.update(reg_loss, template.size(0))
 
         batch_time.update(time.time() - end)

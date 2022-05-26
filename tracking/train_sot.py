@@ -49,7 +49,7 @@ def parse_args():
 def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
     # create model
     print('====> build model <====')
-    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT']:
+    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo']:
         siambuilder = builder.Siamese_builder(config)
         model = siambuilder.build()
     else:
@@ -57,7 +57,8 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
 
     model = model.cuda()
     logger.info(model)
-    model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True, addhead=True)    # load pretrain
+    if config.MODEL.NAME not in ['CNNInMo', 'TransInMo']:
+        model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True, addhead=True)    # load pretrain
 
     # resume or not
     if config.TRAIN.RESUME:   # resume

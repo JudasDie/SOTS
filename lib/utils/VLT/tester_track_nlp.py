@@ -7,9 +7,9 @@ from colorama import Style, Fore
 
 import tracker.sot_tracker as tracker_builder
 import utils.box_helper as boxhelper
-from toolkit.datasets import GOT10kDataset
-from toolkit.evaluation import OPEBenchmark
-from toolkit.utils import overlap_ratio, success_overlap, success_error
+from utils.VLT.toolkit.datasets import GOT10kDataset
+from utils.VLT.toolkit.evaluation import OPEBenchmark
+from utils.VLT.toolkit.utils import overlap_ratio, success_overlap, success_error
 
 
 def no_grad_wrapper(func):

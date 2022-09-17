@@ -23,7 +23,7 @@ export PYTHONPATH=${PYTHONPATH}:$SOTS:$SOTS/lib
 In root path `$SOTS`,
 
 ```
-python tracking/test_sot.py --cfg experiments/TransInMo.yaml --resume snapshot/AutoMatch.pth --dataset OTB2015
+python tracking/test_sot.py --cfg experiments/TransInMo.yaml --resume snapshot/TransInMo.pth --dataset OTB2015
 or
 python tracking/test_sot.py --cfg experiments/AutoMatch.yaml --resume snapshot/AutoMatch.pth --dataset OTB2015
 or

@@ -6,7 +6,7 @@ Data: 2021.6.23
 
 import importlib
 import torch.nn as nn
-from lib.models.sot.siaminference import SiamInference
+from models.sot.siaminference import SiamInference
 
 class Siamese_builder(nn.Module):
     def __init__(self, cfg):
@@ -55,6 +55,10 @@ class Siamese_builder(nn.Module):
             bk_module = importlib.import_module('models.backbone.Swin')
             bk_func = getattr(bk_module, backbone_type)
             backbone = bk_func(self.cfg)
+        elif 'SPOS_VLT' in backbone_type:
+            bk_module = importlib.import_module('models.backbone.SPOS_VLT')
+            bk_func = getattr(bk_module, backbone_type)
+            backbone = bk_func(self.cfg) if 'Wrapper' in backbone_type else bk_func()
         else:
             raise Exception('Not implemented backbone network!')
 
@@ -84,9 +88,9 @@ class Siamese_builder(nn.Module):
                              towernum=self.cfg.MODEL.HEAD.TOWERNUM, align=self.cfg.MODEL.HEAD.ALIGN)
         elif self.cfg.MODEL.NAME == 'SiamDW':
             head = head_func()
-        elif self.cfg.MODEL.NAME == 'TransInMo':
+        elif self.cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             head = head_func(self.cfg.MODEL)
-        elif self.cfg.MODEL.NAME == 'CNNInMo':
+        elif self.cfg.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
             head = head_func(in_channels=self.cfg.MODEL.HEAD.IN_CHANNEL, num_classes=self.cfg.MODEL.HEAD.NUM_CLASSES, num_convs=self.cfg.MODEL.HEAD.NUM_CONVS)
         else:
             head = head_func(in_channels=self.cfg.MODEL.HEAD.IN_CHANNEL,

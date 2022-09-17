@@ -206,7 +206,7 @@ def load_pretrain(model, pretrained_path, print_unuse=True, f2b=True, addhead=Fa
         pretrained_dict = addhead_clsreg(pretrained_dict)
 
     check_keys(model, pretrained_dict, print_unuse=print_unuse)
-    model.load_state_dict(pretrained_dict, strict=False)
+    model.load_state_dict(pretrained_dict, strict=True)
     return model
 
 

@@ -26,6 +26,7 @@ import utils.augmentation as auger
 import sys
 sys.path.append('../')
 
+from transformers import BertTokenizer, BertModel
 
 sample_random = random.Random()
 
@@ -38,17 +39,22 @@ class SiameseDataset(Dataset):
         self.stride = cfg.TRAIN.STRIDE
         self.cfg = cfg
 
-        if cfg.MODEL.NAME in ['Ocean', 'CNNInMo']:
+        if cfg.MODEL.NAME in ['Ocean', 'CNNInMo', 'VLT_SCAR']:
             self.score_size = 25
         elif cfg.MODEL.NAME in ['AutoMatch']:
             self.score_size = 31
         elif cfg.MODEL.NAME in ['SiamFC', 'SiamDW']:
             self.score_size = 17
-        elif cfg.MODEL.NAME in ['TransInMo']:
+        elif cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             self.score_size = 32
             self.GT_xyxy = False
         else:
             raise Exception('Not implemented model!')
+
+        self.nasnlp = False
+        if cfg.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+            self.bert_tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+            self.nasnlp = True
 
         # data augmentation
         self.color = cfg.TRAIN.DATASET.AUG.COMMON.COLOR
@@ -109,6 +115,10 @@ class SiameseDataset(Dataset):
             template, search = dataset._get_pairs(index, dataset.data_name)
             neg = False
 
+        phrase = None
+        if self.nasnlp:
+            phrase = dataset.get_phrase(index)
+
         template, search = self.check_exists(index, dataset, template, search)
 
         template_image = cv2.imread(template[0])
@@ -123,10 +133,10 @@ class SiameseDataset(Dataset):
         template = np.array(template)
         search = np.array(search)
 
-        if self.cfg.MODEL.NAME in ['TransInMo']:
+        if self.cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             cls_label = np.array([0])
             cls_label = torch.tensor(cls_label)
-        elif self.cfg.MODEL.NAME in ['CNNInMo']:
+        elif self.cfg.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
             cls_label = np.zeros((self.score_size, self.score_size), dtype=np.int64)
         else:
             if neg:
@@ -147,10 +157,26 @@ class SiameseDataset(Dataset):
 
         template, search = map(lambda x: np.transpose(x, (2, 0, 1)).astype(np.float32), [template, search])
 
+        if self.nasnlp:
+            nlp_len = 50
+            if phrase == [] or phrase is None:
+                # print(phrase, path)
+                phrase_ids = torch.zeros(nlp_len, dtype=torch.long)
+                phrase_attnmask = torch.zeros(nlp_len, dtype=torch.long)
+            else:
+                if isinstance(phrase, str):
+                    phrase = [phrase]
+                phrase = self.bert_tokenizer.batch_encode_plus(phrase, padding='longest', return_tensors='pt')
+                phrase_ids = phrase['input_ids'].squeeze()
+                phrase_ids = torch.cat([phrase_ids, torch.zeros(nlp_len - phrase_ids.size(0), dtype=torch.long)], dim=0)
+                phrase_attnmask = phrase['attention_mask'].squeeze()
+                phrase_attnmask = torch.cat([phrase_attnmask, torch.zeros(nlp_len - phrase_attnmask.size(0), dtype=torch.long)], dim=0)
+
+
         outputs = {'template': template, 'search': search, 'cls_label': cls_label, 'reg_label': reg_label,
                    'reg_weight': reg_weight, 'template_bbox': np.array(bbox_t, np.float32),
                    'search_bbox': np.array(bbox, np.float32), 'template_mask': template_mask, 'jitterBox': jitterBox,
-                   'jitter_ious': jitter_ious}
+                   'jitter_ious': jitter_ious, 'phrase_ids': phrase_ids, 'phrase_attnmask': phrase_attnmask}
 
         outputs = self.data_package(outputs)
 
@@ -525,12 +551,40 @@ class subData(object):
         self.root = info.PATH
 
         with open(info.ANNOTATION) as fin:
-            self.labels = json.load(fin)
+            meta_data = json.load(fin)
+            self.labels = self._filter_zero(meta_data)
             self._clean()
             self.num = len(self.labels)  # video numer
 
         self.num_use = self.num if self.num_use == -1 else self.num_use
         self._shuffle()
+
+    def _filter_zero(self, meta_data):
+        meta_data_new = {}
+        for video, tracks in meta_data.items():
+            new_tracks = {}
+            phrase = None
+            for trk, frames in tracks.items():
+                if trk == 'phrase':
+                    phrase = frames
+                    continue
+                new_frames = {}
+                for frm, bbox in frames.items():
+                    if not isinstance(bbox, dict):
+                        if len(bbox) == 4:
+                            x1, y1, x2, y2 = bbox
+                            w, h = x2 - x1, y2 - y1
+                        else:
+                            w, h = bbox
+                        if w <= 0 or h <= 0:
+                            continue
+                    new_frames[frm] = bbox
+                if len(new_frames) > 0:
+                    new_tracks[trk] = new_frames
+            if len(new_tracks) > 0:
+                meta_data_new[video] = new_tracks
+                meta_data_new[video]['phrase'] = phrase
+        return meta_data_new
 
     def _clean(self):
         """
@@ -540,6 +594,8 @@ class subData(object):
         to_del = []
         for video in self.labels:
             for track in self.labels[video]:
+                if track == 'phrase':
+                    continue
                 frames = self.labels[video][track]
                 frames = list(map(int, frames.keys()))
                 frames.sort()
@@ -607,7 +663,9 @@ class subData(object):
         """
         video_name = self.videos[index]
         video = self.labels[video_name]
-        track = random.choice(list(video.keys()))
+        video_keys = list(video.keys())
+        video_keys.remove('phrase')
+        track = random.choice(video_keys)
         track_info = video[track]
         try:
             frames = track_info['frames']
@@ -634,13 +692,23 @@ class subData(object):
             index = random.randint(0, self.num - 1)
         video_name = self.videos[index]
         video = self.labels[video_name]
-        track = random.choice(list(video.keys()))
+        video_keys = list(video.keys())
+        video_keys.remove('phrase')
+        track = random.choice(video_keys)
         track_info = video[track]
 
         frames = track_info['frames']
         frame = random.choice(frames)
 
         return self._get_image_anno(video_name, track, frame)
+
+    def get_phrase(self, index):
+        video_name = self.videos[index]
+        video = self.labels[video_name]
+        if 'phrase' not in video.keys():
+            return None
+        else:
+            return video['phrase']
 
 
 if __name__ == '__main__':

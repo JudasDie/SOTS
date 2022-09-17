@@ -22,7 +22,7 @@ from models.sot.InMo.trans_modules import MultiheadAttention
 class FeatureFusionNetwork(nn.Module):
 
     def __init__(self, d_model=512, nhead=8, num_featurefusion_layers=4,
-                 dim_feedforward=2048, dropout=0.1, activation="relu", backbone_channel=256):
+                 dim_feedforward=2048, dropout=0.1, activation="relu", backbone_channel=256, asymmetrical=False):
         super().__init__()
 
         featurefusion_layer = FeatureFusionLayer(d_model, nhead, dim_feedforward, dropout, activation)
@@ -33,6 +33,9 @@ class FeatureFusionNetwork(nn.Module):
         self.decoder = Decoder(decoderCFA_layer, decoderCFA_norm)
 
         self.input_proj = nn.Conv2d(backbone_channel, d_model, kernel_size=1)
+        self.asymmetrical = asymmetrical
+        if asymmetrical:
+            self.input_proj_copy = nn.Conv2d(backbone_channel, d_model, kernel_size=1)
 
         self._reset_parameters()
 
@@ -46,14 +49,17 @@ class FeatureFusionNetwork(nn.Module):
 
     def forward(self, src_temp, mask_temp, src_search, mask_search, pos_temp, pos_search):
         src_temp = self.input_proj(src_temp)
-        src_search = self.input_proj(src_search)
+        if self.asymmetrical:
+            src_search = self.input_proj_copy(src_search)
+        else:
+            src_search = self.input_proj(src_search)
 
         src_temp = src_temp.flatten(2).transpose(1, 2)
         pos_temp = pos_temp.flatten(2).transpose(1, 2)
         src_search = src_search.flatten(2).transpose(1, 2)
         pos_search = pos_search.flatten(2).transpose(1, 2)
-        mask_temp = mask_temp.flatten(1)
-        mask_search = mask_search.flatten(1)
+        mask_temp = mask_temp.flatten(1) if mask_temp is not None else mask_temp
+        mask_search = mask_search.flatten(1) if mask_search is not None else mask_search
 
         memory_temp, memory_search = self.encoder(src1=src_temp, src2=src_search,
                                                   src1_key_padding_mask=mask_temp,
@@ -278,7 +284,8 @@ def Trans_Fuse(config):
         dim_feedforward=config.NECK.DIM_FEEDFORWARD,
         num_featurefusion_layers=config.NECK.LAYER_NUM,
         activation=config.NECK.ACTIVATION,
-        backbone_channel=config.BACKBONE.CHANNEL
+        backbone_channel=config.BACKBONE.CHANNEL,
+        asymmetrical=config.NECK.ASYMMETRICAL
     )
 
 

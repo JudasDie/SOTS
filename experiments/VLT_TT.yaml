@@ -1,0 +1,220 @@
+COMMON:
+  LOG_DIR: 'logs'   # log file
+  CHECKPOINT_DIR: 'snapshot'   # checkpoint file
+  GPUS: '0'
+
+MODEL:
+  NAME: 'VLT_TT'
+  BACKBONE:
+    NAME: 'SPOS_VLT_Wrapper'
+    CHANNEL: 640
+  POS:
+    TYPE: 'sine_tensor'
+    DIM: 256
+  NECK:
+    NAME: "Trans_Fuse"
+    MODULE: 'trans_fuse'  # models.sot.[trans_fuse_win / trans_fuse]
+    HIDDEN_DIM: 256
+    DROPOUT: 0.1
+    NHEAD: 8
+    DIM_FEEDFORWARD: 2048
+    LAYER_NUM: 4
+    ACTIVATION: 'relu'
+    ASYMMETRICAL: True
+  HEAD:
+    NAME: "TransInMoHead"
+    IN_CHANNEL: 256
+    MID_CHANNEL: 256
+    LAYER_NUM: 3
+  LOSS:
+    CLS_LOSS: TransInMoClsLoss
+    REG_LOSS: TransInMoRegLoss
+    EOS_WEIGHT: 0.0625
+#  CAND: None  # for retrain
+  CAND: [[3, 3, 2, 2, 3, 3, 0, 0, 2, 3, 3, 2, 2, 2, 0, 3, 2, 1, 1, 3], [2, 1, 0, 3, 3, 1, 2, 0, 0, 0, 1, 1, 3, 3, 3, 0, 2, 1, 3, 2], [3,0,3,0], [3,0,3,0]]
+  NAS_CKPT_PATH: 'path to checkpoint-spos.pth.tar'
+
+TRAIN:
+  ISTRUE: True  # whether to test
+  WORKERS: 0  # 0 for test on win10
+  START_EPOCH: 0
+  END_EPOCH: 100
+  TEMPLATE_SIZE: 128
+  SEARCH_SIZE: 256
+  BATCH: 8   # batch for each GPU
+  STRIDE: 8
+  RESUME: False
+#  PRETRAIN: 'ltm_nas.model'
+#  LR_POLICY: 'log'
+  PRINT_FREQ: 1
+  CLS_WEIGHT: 2
+  REG_WEIGHT_L1: 3
+  REG_WEIGHT_IOU: 1
+  CLIP_GRAD: False
+
+  DDP:
+    ISTRUE: False  # torch distributed data parallel, default: False, normal data parallel
+    RANK: 0
+
+
+  WARMUP:
+    IFNOT: False
+    TYPE: 'step'
+    EPOCH: 5            # res50 5
+    WARM_POLICY: 'step'
+    KWARGS:
+      start_lr: 0.001    # res50 0.001 alex: 0.005
+      end_lr: 0.005      # res50 0.005  alex: 0.01
+      step: 1
+  LR:
+    TYPE: 'step'
+    KWARGS:
+      step: 20        # res50 0.005  alex 0.01  step 400
+      multi: 0.316         # res50 0.0005  multi 0.1
+      start_lr: 0.0005
+      end_lr: None
+
+
+  LAYERS_LR: 0.1
+  BASE_LR: 0.0005
+  UNFIX_EPOCH: -1
+#  UNFIX_POLICY: 'log'
+#  MOMENTUM: 0.9
+  WEIGHT_DECAY: 0.0001
+  TRAINABLE_LAYER: ['first_conv', 'features', 'nlp_layers', 'vistoken_layers', 'token_map']  # ['layer2', 'layer3', 'layer4'] [] FOR ALL LAYERS
+
+  DATASET:
+    WHICH_USE: ['YTB', 'VID', 'COCO', 'DET', 'GOT10K', 'LASOT', 'TNL2K']
+
+    AUG:
+      EXEMPLAR:
+        SHIFT: 4
+        SCALE: 0.05
+      SEARCH:
+        SHIFTs: 64
+        SCALEs: 0.18
+      COMMON:
+        COLOR: 1
+        FLIP: 0
+        BLUR: 0
+        ROTATION: 0
+        LABELSMOOTH: False
+        MIXUP: 0
+        GRAY: 0
+        CUTOUT: 0
+        NEG: 0.2
+    CONFIG:
+      VID:
+        PATH: './data/vid/crop511'  #  ./data/vid/crop511
+        ANNOTATION: './data/vid/train.json'  # ./data/vid/train.json
+        RANGE: 100
+        USE: -1
+      YTB:
+        PATH: './data/yt_bb/crop511'
+        ANNOTATION: './data/yt_bb/train.json'
+        RANGE: 3
+        USE: -1
+      GOT10K:
+        PATH: './data/got10k/crop511'
+        ANNOTATION: './data/got10k/train.json'
+        RANGE: 100
+        USE: 200000
+      DET:
+        PATH: './data/det/crop511'
+        ANNOTATION: './data/det/train.json'
+        RANGE: 100
+        USE: -1
+      COCO:
+        PATH: "./data/coco/crop511"
+        ANNOTATION: "./data/coco/train2017.json"
+        RANGE: 1
+        USE: -1
+      LASOT:
+        PATH: './data/lasot/crop511'
+        ANNOTATION: './data/lasot/train.json'
+        RANGE: 100
+        USE: 200000
+      TNL2K:
+        PATH: './data/tnl2k/crop511'
+        ANNOTATION: './data/tnl2k/train.json'
+        RANGE: 100
+        USE: 200000
+
+TEST:    # TEST model is same as TRAIN.MODEL
+  ISTRUE: True  # whether to test
+  THREADS: 1   # multi threads test
+  DATA: 'LASOTTEST'
+  START_EPOCH: 5
+  END_EPOCH: 20
+  EPOCH_TEST: True   # use default hyper-parameters
+  RESUME: 'path to checkpoint'   # if not false, ignore start and end epochs
+  HYPERS:
+    OTB2015:
+      penalty_k: 0.147
+      lr: 0.699
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    VOT2019:
+      penalty_k: 0.143
+      lr: 0.803
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    GOT10KTEST:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    LASOTTEST:
+      penalty_k: 0
+      lr: 1
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    TNL2K:
+      penalty_k: 0
+      lr: 1
+      window_influence: 0.80
+      small_sz: 256
+      big_sz: 256
+    TOTB:
+      penalty_k: 0.103
+      lr: 0.82
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    NFS30:
+      penalty_k: 0.015
+      lr: 0.944
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    TC128:
+      penalty_k: 0.063
+      lr: 0.519
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    UAV123:
+      penalty_k: 0.128
+      lr: 0.913
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+    TRACKINGNET:
+      penalty_k: 0.049
+      lr: 1
+      window_influence: 0.49
+      small_sz: 256
+      big_sz: 256
+
+TUNE:    # TUNE model is same as TRAIN.MODEL
+  ISTRUE: False  # whether to tune
+  DATA: 'OTB2015'
+  RESUME: 'snapshot/checkpoint_e7.pth'   # please change this to the checkpoint you want
+  TRIAL_PER_GPU: 4
+
+
+

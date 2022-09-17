@@ -28,8 +28,8 @@ def weighted_BCE(pred, label):
     '''
     pred = pred.view(-1)
     label = label.view(-1)
-    pos = label.data.eq(1).nonzero().squeeze().cuda()
-    neg = label.data.eq(0).nonzero().squeeze().cuda()
+    pos = label.data.eq(1).nonzero(as_tuple=False).squeeze().cuda()
+    neg = label.data.eq(0).nonzero(as_tuple=False).squeeze().cuda()
 
     loss_pos = simple_BCE(pred, label, pos)
     loss_neg = simple_BCE(pred, label, neg)

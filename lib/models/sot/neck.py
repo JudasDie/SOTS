@@ -120,3 +120,58 @@ class AdjustAllLayer(nn.Module):
                 adj_layer = getattr(self, 'downsample'+str(i+2))
                 out.append(adj_layer(features[i]).contiguous())
             return out
+
+class AdjustAllLayer_VLT(nn.Module):
+    def __init__(self, backbone_same=False, in_channels=[512, 1024, 2048], out_channels=[512, 1024, 2048]):
+        super(AdjustAllLayer_VLT, self).__init__()
+        self.backbone_same = backbone_same
+        self.num = len(out_channels)
+        if self.num == 1:
+            self.downsample = AdjustLayer(in_channels[0], out_channels[0])
+        else:
+            for i in range(self.num):
+                self.add_module('downsample'+str(i+2),
+                                AdjustLayer(in_channels[i], out_channels[i]))
+
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        from timm.models.layers import trunc_normal_
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv2d):
+            fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            fan_out //= m.groups
+            m.weight.data.normal_(0, math.sqrt(2.0 / fan_out))
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m, nn.BatchNorm2d):
+            m.weight.data.fill_(1.0)
+            m.bias.data.zero_()
+        else:
+            for p in m.parameters():
+                if p.dim() > 1:
+                    nn.init.xavier_uniform_(p)
+
+    def forward(self, features, template=False):
+        if features[-1].size(-1) < 20:
+            template = True
+        if self.num == 1:
+            return self.downsample(features)
+        else:
+            out = []
+            len = self.num if self.backbone_same else self.num // 2
+            if self.backbone_same or template:
+                for i in range(len):
+                    adj_layer = getattr(self, 'downsample'+str(i+2))
+                    out.append(adj_layer(features[i]).contiguous())
+            else:
+                for i in range(len):
+                    adj_layer = getattr(self, 'downsample' + str(i + 2+len))
+                    out.append(adj_layer(features[i]).contiguous())
+            return out

@@ -18,8 +18,8 @@ import numpy as np
 from collections import OrderedDict
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 
-from lib.models.sot.modules import NestedTensor
-from lib.models.sot.InMo.position_encoding import build_position_encoding
+from models.sot.modules import NestedTensor
+from models.sot.InMo.position_encoding import build_position_encoding
 
 
 class Mlp(nn.Module):

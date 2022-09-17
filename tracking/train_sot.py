@@ -49,7 +49,7 @@ def parse_args():
 def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
     # create model
     print('====> build model <====')
-    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo']:
+    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo', 'VLT_SCAR', 'VLT_TT']:
         siambuilder = builder.Siamese_builder(config)
         model = siambuilder.build()
     else:
@@ -57,24 +57,38 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
 
     model = model.cuda()
     logger.info(model)
-    if config.MODEL.NAME not in ['CNNInMo', 'TransInMo']:
+    if config.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+        model.backbone.nas(nas_ckpt_path=config.MODEL.NAS_CKPT_PATH)
+        model.backbone.load_nlp()
+        # model = loader.load_pretrain(model, config.MODEL.BACKBONE.PRETRAIN, f2b=False, addhead=False)  # load pretrain
+    elif config.MODEL.NAME not in ['CNNInMo', 'TransInMo']:
         model = loader.load_pretrain(model, './pretrain/{0}'.format(config.TRAIN.PRETRAIN), f2b=True, addhead=True)    # load pretrain
 
-    # resume or not
-    if config.TRAIN.RESUME:   # resume
-        model, optimizer, start_epoch, arch = loader.restore_from(model, optimizer, config.TRAIN.RESUME)
-    else:
-        start_epoch = config.TRAIN.START_EPOCH
 
     # get optimizer
     if not config.TRAIN.START_EPOCH == config.TRAIN.UNFIX_EPOCH and not config.MODEL.NAME in ['SiamDW', 'SiamFC']:
-        optimizer, lr_scheduler = learner.build_siamese_opt_lr(config, model, config.TRAIN.START_EPOCH)
+        gpus = [int(i) for i in config.COMMON.GPUS.split(',')]
+        gpu_num = world_size = len(gpus)  # or use world_size = torch.cuda.device_count()
+        gpus = list(range(0, gpu_num))
+
+        logger.info('GPU NUM: {:2d}'.format(len(gpus)))
+
+        if not config.TRAIN.DDP.ISTRUE:
+            device = torch.device('cuda:{}'.format(gpus[0]) if torch.cuda.is_available() else 'cpu')
+            dist_model = DataParallel(model, device_ids=gpus).to(device)
+        optimizer, lr_scheduler = learner.build_siamese_opt_lr(config, dist_model.module, config.TRAIN.START_EPOCH)
     else:
         if config.MODEL.NAME in ['SiamDW', 'SiamFC']:
             trainable_params = loader.check_trainable(model, logger, print=False)
             optimizer, lr_scheduler = learner.build_simple_siamese_opt_lr(config, trainable_params)
         else:
             optimizer, lr_scheduler = learner.build_siamese_opt_lr(config, model, 0)  # resume wrong (last line)
+
+    # resume or not
+    if config.TRAIN.RESUME:   # resume
+        model, optimizer, start_epoch, arch = loader.restore_from(model, optimizer, config.TRAIN.RESUME)
+    else:
+        start_epoch = config.TRAIN.START_EPOCH
 
     # check trainable again
     print('==========check trainable parameters==========')
@@ -133,6 +147,12 @@ def epoch_train(config, logger, writer_dict, wandb_instance=None, args=None):
         inputs = {'data_loader': train_loader, 'model': model, 'optimizer': optimizer, 'device': device,
                   'epoch': epoch + 1, 'cur_lr': curLR, 'config': config,
                     'writer_dict': writer_dict, 'logger': logger, 'wandb_instance': wandb_instance}
+
+        if config.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+            cand = config.MODEL.CAND if config.MODEL.CAND != 'None' else [None] * 4
+            inputs['nas_list_z'] = cand[0]
+            inputs['nas_list_x'] = cand[1]
+            inputs['nas_list_nlp'] = cand[-2:]
 
         model, writer_dict = trainer(inputs)
 

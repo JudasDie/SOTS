@@ -28,6 +28,7 @@ MODEL:
     DIM_FEEDFORWARD: 1024
     LAYER_NUM: 4
     ACTIVATION: 'relu'
+    ASYMMETRICAL: False
   HEAD:
     NAME: "TransInMoHead"
     IN_CHANNEL: 256

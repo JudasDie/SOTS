@@ -57,22 +57,25 @@ def siamese_train(inputs):
 
         model_inputs = {'template': template, 'search': search, 'cls_label': cls_label, 'reg_label': reg_label,
                         'reg_weight': reg_weight, 'template_bbox': template_bbox, 'search_bbox': search_bbox,
-                        'template_mask': template_mask, 'jitterBox': jitterBox, 'jitter_ious': jitter_ious}
+                        'template_mask': template_mask, 'jitterBox': jitterBox, 'jitter_ious': jitter_ious,
+                        'nas_list_z': inputs['nas_list_z'], 'nas_list_x': inputs['nas_list_x'],
+                        'nas_list_nlp': inputs['nas_list_nlp'],
+                        'phrase_ids': batchinfo['phrase_ids'], 'phrase_attnmask': batchinfo['phrase_attnmask']}
 
         model_loss = model(model_inputs)
         cls_loss = torch.mean(model_loss['cls_loss'])
         # reg_loss = torch.mean(model_loss['reg_loss']) if 'reg_loss' in model_loss.keys() else None
-        if cfg.MODEL.NAME in ['TransInMo']:
+        if cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             reg_loss = model_loss['reg_loss']
             reg_loss['loss_l1'] = torch.mean(reg_loss['loss_l1'])
             reg_loss['loss_iou'] = torch.mean(reg_loss['loss_iou'])
         else:
             reg_loss = torch.mean(model_loss['reg_loss']) if 'reg_loss' in model_loss.keys() else None
 
-        if cfg.MODEL.NAME in ['TransInMo']:
+        if cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + cfg.TRAIN.REG_WEIGHT_L1 * reg_loss[
                 'loss_l1'] + cfg.TRAIN.REG_WEIGHT_IOU * reg_loss['loss_iou']
-        elif cfg.MODEL.NAME in ['CNNInMo']:
+        elif cfg.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
             cen_loss = torch.mean(model_loss['cen_loss'])
             loss = cfg.TRAIN.CLS_WEIGHT * cls_loss + \
                 cfg.TRAIN.REG_WEIGHT * reg_loss + cfg.TRAIN.CEN_WEIGHT * cen_loss
@@ -97,7 +100,7 @@ def siamese_train(inputs):
         cls_loss = cls_loss.item()
         cls_losses.update(cls_loss, template.size(0))
 
-        if cfg.MODEL.NAME in ['TransInMo']:
+        if cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             reg_loss = (reg_loss['loss_l1'] + reg_loss['loss_iou']).item()
         else:
             reg_loss = reg_loss.item() if reg_loss is not None else cls_loss

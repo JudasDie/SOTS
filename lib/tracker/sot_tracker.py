@@ -11,8 +11,8 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 import torchvision.transforms.functional as tvisf
-import lib.utils.read_file as reader
-import lib.utils.tracking_helper as tracking_helper
+import utils.read_file as reader
+import utils.tracking_helper as tracking_helper
 from pprint import pprint
 import pdb
 
@@ -71,11 +71,11 @@ class SiamTracker(object):
         if self.config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch']:
             self.window = np.outer(np.hanning(p.score_size), np.hanning(p.score_size))
             self.grids(p)
-        elif self.config.MODEL.NAME in ['TransInMo']:
+        elif self.config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             hanning = np.hanning(p.score_size)
             window = np.outer(hanning, hanning)
             self.window = window.flatten()
-        elif self.config.MODEL.NAME in ['CNNInMo']:
+        elif self.config.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
             hanning = np.hanning(p.score_size)
             self.window = np.outer(hanning, hanning)
         else:
@@ -90,7 +90,7 @@ class SiamTracker(object):
         self.avg_chans = np.mean(im, axis=(0, 1))
 
         crop_input = {'image': im, 'pos': self.target_pos, 'model_sz': self.p.exemplar_size, 'original_sz': s_z, 'avg_chans': self.avg_chans}
-        z_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo'])
+        z_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo', 'VLT_SCAR', 'VLT_TT'])
         z_crop, z_crop_info = z_crop_meta['image_tensor'], z_crop_meta['meta_info']
 
         if self.config.MODEL.NAME in ['AutoMatch']:
@@ -106,7 +106,7 @@ class SiamTracker(object):
             self.model.template({'template': z_crop.unsqueeze(0).cuda(), 'template_mask': mask_crop.unsqueeze(0).cuda(),
                                  'target_box': target_box})
         else:
-            if self.config.MODEL.NAME in ['TransInMo']:
+            if self.config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
                 scale_z = self.p.exemplar_size / s_z
                 self.scale_z = scale_z
                 z_crop = z_crop.float().mul(1.0 / 255.0).clamp(0.0, 1.0)
@@ -114,7 +114,24 @@ class SiamTracker(object):
                 self.std = [0.229, 0.224, 0.225]
                 self.inplace = False
                 z_crop = tvisf.normalize(z_crop, self.mean, self.std, self.inplace)
-            self.model.template({'template': z_crop.unsqueeze(0).cuda()})
+            if self.config.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+                input_model = {'template': z_crop.unsqueeze(0).cuda()}
+                input_model['nas_list_z'] = inputs['nas_list_z']
+                input_model['nas_list_x'] = inputs['nas_list_x']
+                input_model['nas_list_nlp'] = inputs['nas_list_nlp']
+                target_box = tracking_helper.get_bbox(s_z, self.p, self.target_sz)
+
+                if isinstance(target_box, tuple):
+                    template_bbox = torch.tensor(
+                        [target_box[0], target_box[1], target_box[2], target_box[3]]).cuda().float().unsqueeze(0)
+                else:
+                    template_bbox = torch.tensor(
+                        [target_box.x1, target_box.y1, target_box.x2, target_box.y2]).cuda().float().unsqueeze(0)
+                input_model['template_bbox'] = template_bbox
+                input_model['phrase'] = inputs['phrase']
+                self.model.template(input_model)
+            else:
+                self.model.template({'template': z_crop.unsqueeze(0).cuda()})
 
         # for SiamFC: additional parameters
         if self.config.MODEL.NAME in ['SiamDW', 'SiamFC']:
@@ -139,7 +156,7 @@ class SiamTracker(object):
             x_crop_meta = tracking_helper.siamfc_pyramid_crop(crop_input)
         else:
             # crop image in subsequent frames
-            if self.config.MODEL.NAME in ['TransInMo']:
+            if self.config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
                 hc_x = self.target_sz[1] + (4 - 1) * self.p.context_amount * sum(self.target_sz)
                 wc_x = self.target_sz[0] + (4 - 1) * self.p.context_amount * sum(self.target_sz)
                 s_x = math.ceil(math.sqrt(wc_x * hc_x))
@@ -149,7 +166,7 @@ class SiamTracker(object):
                 s_z = np.sqrt(wc_z * hc_z)
                 scale_z = self.p.exemplar_size / s_z
 
-                if self.config.MODEL.NAME in ['CNNInMo']:
+                if self.config.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
                     self.scale_z = scale_z
                     s_x = s_z * (self.p.instance_size / self.p.exemplar_size)
                 else:
@@ -160,7 +177,7 @@ class SiamTracker(object):
             crop_input = {'image': im, 'pos': self.target_pos, 'model_sz': self.p.instance_size,
                           'original_sz': tracking_helper.python2round(s_x),
                           'avg_chans': self.avg_chans}
-            x_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo'])
+            x_crop_meta = tracking_helper.siam_crop(crop_input, pysot_crop=self.config.MODEL.NAME in ['TransInMo','CNNInMo','VLT_SCAR', 'VLT_TT'])
 
 
         x_crop, x_crop_info = x_crop_meta['image_tensor'], x_crop_meta['meta_info']
@@ -168,7 +185,7 @@ class SiamTracker(object):
         if self.config.MODEL.NAME in ['SiamFC', 'SiamDW']:
             x_crop = x_crop.cuda()
         else:
-            if self.config.MODEL.NAME in ['TransInMo']:
+            if self.config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
                 x_crop = x_crop.float().mul(1.0 / 255.0).clamp(0.0, 1.0)
                 x_crop = tvisf.normalize(x_crop, self.mean, self.std, self.inplace)
             x_crop = x_crop.unsqueeze(0).cuda()
@@ -277,7 +294,7 @@ class SiamTracker(object):
             self.p.s_x = max(self.p.min_s_x, min(self.p.max_s_x, (1 - self.p.lr) * self.p.s_x + self.p.lr * scaled_instance[best_scale]))
             self.target_sz = [(1 - self.p.lr) * self.target_sz[0] + self.p.lr * scaled_target[0][0][best_scale],
                          (1 - self.p.lr) * self.target_sz[1] + self.p.lr * scaled_target[1][0][best_scale]]
-        elif self.config.MODEL.NAME in ['TransInMo']:
+        elif self.config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             def _convert_score(score):
                 score = score.permute(2, 1, 0).contiguous().view(2, -1).permute(1, 0)
                 score = F.softmax(score, dim=1).data[:, 0].cpu().numpy()
@@ -327,7 +344,7 @@ class SiamTracker(object):
             # update state
             self.target_pos = np.array([cx, cy])
             self.target_sz = np.array([width, height])
-        elif self.config.MODEL.NAME in ['CNNInMo']:
+        elif self.config.MODEL.NAME in ['CNNInMo', 'VLT_SCAR']:
             cls = self._convert_cls(outputs['cls']).squeeze()
             cen = outputs['cen'].data.cpu().numpy()
             cen = (cen - cen.min()) / cen.ptp()
@@ -527,11 +544,11 @@ class DefaultConfig(object):
 
     if MODEL_NAME in ['Ocean', 'OceanPlus']:
         score_size = (instance_size - exemplar_size) // total_stride + 1 + 8
-    elif MODEL_NAME in ['SiamDW', 'SiamFC', 'CNNInMo']:
+    elif MODEL_NAME in ['SiamDW', 'SiamFC', 'CNNInMo', 'VLT_SCAR']:
         score_size = (instance_size - exemplar_size) // total_stride + 1
     elif MODEL_NAME in ['AutoMatch']:
         score_size = (instance_size - exemplar_size) // total_stride + 14
-    elif MODEL_NAME in ['TransInMo']:
+    elif MODEL_NAME in ['TransInMo', 'VLT_TT']:
         score_size = (instance_size - exemplar_size) // total_stride * 2
     else:
         raise Exception('Unknown model!')
@@ -558,9 +575,9 @@ class DefaultConfig(object):
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1
         elif self.MODEL_NAME in ['AutoMatch']:
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1 + 14 # for ++
-        elif self.MODEL_NAME in ['TransInMo']:
+        elif self.MODEL_NAME in ['TransInMo', 'VLT_TT']:
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride * 2
-        elif self.MODEL_NAME in ['CNNInMo']:
+        elif self.MODEL_NAME in ['CNNInMo', 'VLT_SCAR']:
             self.score_size = (self.instance_size - self.exemplar_size) // self.total_stride + 1 + 8
         else:
             raise Exception('Unknown model!')

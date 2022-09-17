@@ -52,7 +52,7 @@ def track(inputs):
     for f, image_file in enumerate(image_files):
         im = cv2.imread(image_file)
         if len(im.shape) == 2: im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
-        if config.MODEL.NAME in ['TransInMo']:
+        if config.MODEL.NAME in ['TransInMo', 'VLT_TT']:
             im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
         tic = cv2.getTickCount()
@@ -61,6 +61,12 @@ def track(inputs):
             target_pos, target_sz = np.array([cx, cy]), np.array([w, h])
 
             init_inputs = {'image': im, 'pos': target_pos, 'sz': target_sz, 'model': siam_net}
+            if config.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+                init_inputs['phrase'] = video_info['phrase']
+                cand = config.MODEL.CAND if config.MODEL.CAND != 'None' else [None] * 4
+                init_inputs['nas_list_z'] = cand[0]
+                init_inputs['nas_list_x'] = cand[1]
+                init_inputs['nas_list_nlp'] = cand[-2:]
             siam_tracker.init(init_inputs)  # init tracker
 
             # location = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
@@ -108,10 +114,13 @@ def main():
     dataset = dataset_loader.load()
     video_keys = list(dataset.keys()).copy()
     
-    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo']:
+    if 'Siam' in config.MODEL.NAME or config.MODEL.NAME in ['Ocean', 'OceanPlus', 'AutoMatch', 'TransT', 'CNNInMo', 'TransInMo', 'VLT_SCAR', 'VLT_TT']:
         siam_tracker = tracker_builder.SiamTracker(config)
         siambuilder = builder.Siamese_builder(config)
         siam_net = siambuilder.build()
+        if config.MODEL.NAME in ['VLT_SCAR', 'VLT_TT']:
+            siam_net.backbone.nas(nas_ckpt_path=config.MODEL.NAS_CKPT_PATH)
+            siam_net.backbone.load_nlp()
     else:
         raise Exception('Not implemented model type!')
 

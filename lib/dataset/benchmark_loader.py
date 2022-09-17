@@ -222,13 +222,17 @@ class load_sot_benchmark():
         LASOT: https://arxiv.org/abs/1809.07845
         """
         info = {}
-        base_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset)
-        json_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset + '.json')
+        # base_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset)
+        # json_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset + '.json')
+        base_path = 'H:/Datasets/LaSOT'
+        json_path = join(base_path, 'LaSOT.json')
         jsons = json.load(open(json_path, 'r'))
         testingvideos = list(jsons.keys())
 
         father_videos = sorted(os.listdir(base_path))
         for f_video in father_videos:
+            if '.' in f_video:
+                continue
             f_video_path = join(base_path, f_video)
             son_videos = sorted(os.listdir(f_video_path))
             for s_video in son_videos:
@@ -239,12 +243,12 @@ class load_sot_benchmark():
                 # ground truth
                 gt_path = join(s_video_path, 'groundtruth.txt')
                 gt = np.loadtxt(gt_path, delimiter=',')
-                gt = gt - [1, 1, 0, 0]
+                # gt = gt - [1, 1, 0, 0]
                 # get img file
                 img_path = join(s_video_path, 'img', '*jpg')
                 image_files = sorted(glob.glob(img_path))
 
-                info[s_video] = {'image_files': image_files, 'gt': gt, 'name': s_video}
+                info[s_video] = {'image_files': image_files, 'gt': gt, 'name': s_video, 'phrase': jsons[s_video]['phrase'] if 'phrase' in jsons[s_video].keys() else None}
         return info
 
     def load_DAVIS(self):

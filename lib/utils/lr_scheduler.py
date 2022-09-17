@@ -183,11 +183,18 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
     if current_epoch >= cfg.TRAIN.UNFIX_EPOCH:
         if len(cfg.TRAIN.TRAINABLE_LAYER) > 0:  # specific trainable layers
             for layer in cfg.TRAIN.TRAINABLE_LAYER:
-                for param in getattr(model.backbone, layer).parameters():
-                    param.requires_grad = True
-                for m in getattr(model.backbone, layer).modules():
-                    if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
-                        m.train()
+                if cfg.MODEL.NAME in ['VLT_TT']:
+                    for param in getattr(model.backbone[0].body, layer).parameters():
+                        param.requires_grad = True
+                    for m in getattr(model.backbone[0].body, layer).modules():
+                        if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
+                            m.train()
+                else:
+                    for param in getattr(model.backbone, layer).parameters():
+                        param.requires_grad = True
+                    for m in getattr(model.backbone, layer).modules():
+                        if isinstance(m, (nn.LayerNorm, nn.BatchNorm2d)):
+                            m.train()
         else:    # train all backbone layers
             for param in model.backbone.parameters():
                 param.requires_grad = True
@@ -202,8 +209,24 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
                 m.eval()
 
     trainable_params = []
-    trainable_params += [{'params': filter(lambda x: x.requires_grad, model.backbone.parameters()),
-                          'lr': cfg.TRAIN.LAYERS_LR * cfg.TRAIN.BASE_LR}]
+
+    if cfg.MODEL.NAME in ['VLT_SCAR']:
+        for layer in cfg.TRAIN.TRAINABLE_LAYER[:2]:
+            trainable_params += [{'params': filter(lambda x: x.requires_grad, getattr(model.backbone, layer).parameters()),
+                                  'lr': cfg.TRAIN.LAYERS_LR * cfg.TRAIN.BASE_LR}]
+        for layer in cfg.TRAIN.TRAINABLE_LAYER[2:]:
+            trainable_params += [{'params': filter(lambda x: x.requires_grad, getattr(model.backbone, layer).parameters()),
+                                  'lr': cfg.TRAIN.BASE_LR}]
+    elif cfg.MODEL.NAME in ['VLT_TT']:
+        for layer in cfg.TRAIN.TRAINABLE_LAYER[:2]:
+            trainable_params += [{'params': filter(lambda x: x.requires_grad, getattr(model.backbone[0].body, layer).parameters()),
+                                  'lr': cfg.TRAIN.LAYERS_LR * cfg.TRAIN.BASE_LR}]
+        for layer in cfg.TRAIN.TRAINABLE_LAYER[2:]:
+            trainable_params += [{'params': filter(lambda x: x.requires_grad, getattr(model.backbone[0].body, layer).parameters()),
+                                  'lr': cfg.TRAIN.BASE_LR}]
+    else:
+        trainable_params += [{'params': filter(lambda x: x.requires_grad, model.backbone.parameters()),
+                              'lr': cfg.TRAIN.LAYERS_LR * cfg.TRAIN.BASE_LR}]
 
     trainable_params += [{'params': model.neck.parameters(),
                         'lr': cfg.TRAIN.BASE_LR}]
@@ -211,7 +234,7 @@ def build_siamese_opt_lr(cfg, model, current_epoch=0):
     trainable_params += [{'params': model.head.parameters(),
                           'lr': cfg.TRAIN.BASE_LR}]
 
-    if cfg.MODEL.NAME == 'TransInMo':
+    if cfg.MODEL.NAME in ['TransInMo', 'VLT_TT']:
         optimizer = torch.optim.AdamW(trainable_params, weight_decay=cfg.TRAIN.WEIGHT_DECAY)
         # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 200, gamma=0.316)
     else:

@@ -222,10 +222,8 @@ class load_sot_benchmark():
         LASOT: https://arxiv.org/abs/1809.07845
         """
         info = {}
-        # base_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset)
-        # json_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset + '.json')
-        base_path = 'H:/Datasets/LaSOT'
-        json_path = join(base_path, 'LaSOT.json')
+        base_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset)
+        json_path = join(realpath(dirname(__file__)), '../../dataset', self.dataset + '.json')
         jsons = json.load(open(json_path, 'r'))
         testingvideos = list(jsons.keys())
 

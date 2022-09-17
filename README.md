@@ -78,20 +78,20 @@ $SOTS
 
 ## Performance
 | <sub>Model</br></sub> | <sub>OTB2015</br> </sub> | <sub>GOT10K</br> </sub> | <sub>LaSOT</br> </sub> | <sub>TNL2K</br></sub> | <sub>TrackingNet</br></sub> | <sub>NFS30</br> </sub> | <sub>TOTB</sub> |<sub>VOT2019</sub> |<sub>TC128</sub> |<sub>UAV123</sub> |<sub>LaSOT_Ext</sub> |<sub>OTB-99-LANG</sub> |
-|:-----:|:-:|:----:|:------:|:--------:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|:-----:|:-:|:----:|:------:|:--------:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
 | <sub>SiamDW<sub>  | <sub>0.670</sub> | <sub>0.429</sub> | <sub>0.386</sub>|<sub>0.348</sub>|<sub>61.1</sub>| <sub>0.521</sub> |<sub>0.500</sub> |<sub>0.241</sub> |<sub>0.583</sub> |<sub>0.536</sub> |<sub>-</sub> |<sub>-</sub> |
 | <sub>Ocean</sub>   |  <sub>0.676</sub> | <sub>0.615</sub> | <sub>0.517</sub>|<sub>0.421</sub>|<sub>69.2</sub>| <sub>0.553</sub> |<sub>0.638</sub> |<sub>0.323</sub> |<sub>0.585</sub> |<sub>0.621</sub> |<sub>-</sub> |<sub>-</sub> |
 | <sub>AutoMatch</sub> | <sub>0.714</sub> | <sub>0.652</sub> | <sub>0.583</sub>|<sub>0.472</sub>|<sub>76.0</sub>| <sub>0.606</sub> |<sub>0.668</sub> |<sub>0.322</sub> |<sub>0.634</sub> |<sub>0.644</sub> |<sub>-</sub> |<sub>-</sub> |
 | <sub>CNNInMo</sub> | <sub>0.703</sub> | <sub>-</sub> | <sub>0.539</sub>|<sub>0.422</sub>|<sub>72.1</sub>| <sub>0.560</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.629</sub> |<sub>-</sub> |<sub>-</sub> |
 | <sub>TransInMo</sub> | <sub>0.711</sub> | <sub>-</sub> | <sub>0.657</sub>|<sub>0.520</sub>|<sub>81.7</sub>| <sub>0.668</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.690</sub> |<sub>-</sub> |<sub>-</sub> |
 | <sub>VLT_SCAR</sub> | <sub>-</sub> | <sub>0.610</sub> | <sub>0.639</sub>|<sub>0.498</sub>|<sub>-</sub>| <sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.447</sub> |<sub>0.739</sub> |
-| <sub>VLT_SCAR</sub> | <sub>-</sub> | <sub>0.694</sub> | <sub>0.673</sub>|<sub>0.531</sub>|<sub>-</sub>| <sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.484</sub> |<sub>0.764</sub> |
+| <sub>VLT_TT</sub> | <sub>-</sub> | <sub>0.694</sub> | <sub>0.673</sub>|<sub>0.531</sub>|<sub>-</sub>| <sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>-</sub> |<sub>0.484</sub> |<sub>0.764</sub> |
 
 
 
 ## Tracker Details
 ### VLT_SCAR/VLT_TT [NeurIPS2022]
-**[[Paper]](https://arxiv.org/abs/2201.02526) [[Raw Results]](https://drive.google.com/drive/folders/1gO_VBm7ucvNwj_Xi8ZKt2rRysrjhyvep?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/master/lib/tutorial/sot/sot_vlt.md)** <br/>
+**[[Paper]](https://arxiv.org/abs/2207.01076) [[Raw Results]](https://drive.google.com/drive/folders/1gO_VBm7ucvNwj_Xi8ZKt2rRysrjhyvep?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/SOT/lib/tutorial/sot/sot_vlt.md)** <br/>
 VLT explores a different path to achieve SOTA tracking without complex Transformer, i.e., multimodal VL tracking. The essence is a unified-adaptive VL representation, learned by the proposed ModaMixer and asymmetrical networks. The experiments show our approach surprisingly boosts a pure CNN-based Siamese tracker to achieve competitive or even better performances compared to recent SOTAs, which also benefits Transformer-based trackers. We hope that this work inspires more possibilities for future tracking beyond Transformer.
 
 <img src="https://github.com/JudasDie/SOTS/blob/SOT/demo/VLT.jpg" width="700" alt="VLT"/><br/>

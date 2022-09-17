@@ -92,7 +92,7 @@ $SOTS
 ## Tracker Details
 ### VLT_SCAR/VLT_TT [NeurIPS2022]
 **[[Paper]](https://arxiv.org/abs/2207.01076) [[Raw Results]](https://drive.google.com/drive/folders/1gO_VBm7ucvNwj_Xi8ZKt2rRysrjhyvep?usp=sharing) [[Training and Testing Tutorial]](https://github.com/JudasDie/SOTS/tree/SOT/lib/tutorial/sot/sot_vlt.md)** <br/>
-VLT explores a different path to achieve SOTA tracking without complex Transformer, i.e., multimodal VL tracking. The essence is a unified-adaptive VL representation, learned by the proposed ModaMixer and asymmetrical networks. The experiments show our approach surprisingly boosts a pure CNN-based Siamese tracker to achieve competitive or even better performances compared to recent SOTAs, which also benefits Transformer-based trackers. We hope that this work inspires more possibilities for future tracking beyond Transformer.
+VLT explores a different path to achieve SOTA tracking without complex Transformer, i.e., multimodal Vision-Language tracking. The essence is a unified-adaptive Vision-Language representation, learned by the proposed ModaMixer and asymmetrical networks. The experiments show our approach surprisingly boosts a pure CNN-based Siamese tracker to achieve competitive or even better performances compared to recent SOTAs, which also benefits Transformer-based trackers. We hope that this work inspires more possibilities for future tracking beyond Transformer.
 
 <img src="https://github.com/JudasDie/SOTS/blob/SOT/demo/VLT.jpg" width="700" alt="VLT"/><br/>
 

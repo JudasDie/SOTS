@@ -82,7 +82,7 @@ python -m torch.distributed.launch --nproc_per_node $GPU_NUMS trackng/train_sot.
 This script integrates **train**, **epoch test** and **tune**. It is suggested to run them one by one when you are not familiar with our whole framework (modify the key `ISTRUE` in `$SOTS/experiments/XX.yaml`). When you know this framework well, simply run this one-key script.
 
 #### run for VLT_SCAR/VLT_TT
-As mentioned in [paper](https://arxiv.org/abs/2201.02526), the training process contains three steps: 
+As mentioned in [paper](https://arxiv.org/abs/2207.01076), the training process contains three steps: 
 
 - Pretraining the supernet by randomly sampling an architecture.
 

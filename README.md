@@ -168,9 +168,79 @@ Other trackers, coming soon ...
 
 ## References
 ```
-https://github.com/StrangerZhang/pysot-toolkit
-...
+@inproceedings{guo2022divert,
+  title={Divert More Attention to Vision-Language Tracking},
+  author={Guo, Mingzhe and Zhang, Zhipeng and Fan, Heng and Jing, Liping},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2022}
+}
+
+@inproceedings{zhang2021learn,
+  title={Learn to Match: Automatic Matching Network Design for Visual Tracking},
+  author={Zhang, Zhipeng and Wang, Yi and Li, Weiming and Yuan, Licheng},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages={13339--13348},
+  year={2021}
+}
+
+@inproceedings{zhang2020ocean,
+  title={Ocean: Object-aware Anchor-free Tracking},
+  author={Zhang, Zhipeng and Peng, Houwen and Fu, Jianlong and Li, Bing and Hu, Weiming},
+  booktitle={Proceedings of the European Conference on Computer Vision (ECCV)},
+  pages={771--787},
+  year={2020}
+}
+
+
+@article{zhang2022oceanplus,
+  title={OceanPlus: Efficient and Robust Anchor-Free Tracking},
+  author={Zhang, Zhipeng and Peng, Houwen and Fu, Jianlong and Li, Bing and Hu, Weiming},
+  journal={IEEE Transactions on Image Processing (TIP)},
+  volume={31},
+  pages={652--665},
+  year={2022}
+}
+
+@article{hu2026ocean,
+  title={Ocean: Object-Aware Anchor-Free Tracking with Matching-Relation Learning},
+  author={Hu, Weiming and Zhang, Zhipeng and Li, Bing and Peng, Houwen and Maybank, Stephen},
+  journal={Machine Intelligence Research},
+  doi={10.1007/s11633-026-1634-0},
+  year={2026},
+  note={Accepted}
+}
+
+@inproceedings{zhang2019deeper,
+  title={Deeper and Wider Siamese Networks for Real-Time Visual Tracking},
+  author={Zhang, Zhipeng and Peng, Houwen},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages={4591--4600},
+  year={2019}
+}
+
+@inproceedings{liang2022one,
+  title={One more check: making “fake background” be tracked again},
+  author={Liang, Chao and Zhang, Zhipeng and Zhou, Xue and Li, Bing and Hu, Weiming},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={36},
+  number={2},
+  pages={1546--1554},
+  year={2022}
+}
+
+@article{liang2022rethinking,
+  title={Rethinking the competition between detection and reid in multiobject tracking},
+  author={Liang, Chao and Zhang, Zhipeng and Zhou, Xue and Li, Bing and Zhu, Shuyuan and Hu, Weiming},
+  journal={IEEE Transactions on Image Processing},
+  volume={31},
+  pages={3182--3196},
+  year={2022},
+  publisher={IEEE}
+}
 ```
+
+## 
+
 ## Contributors
 - **[Zhipeng Zhang](http://zhipengzhang.cn/)**
 - **[Mingzhe Guo]()**

@@ -3,6 +3,8 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
+:boom: [OceanV2](https://links.springernature.com/f/a/EHcLRgauDUiLms89NQLgcA~~/AABE5hA~/TQzKaXuj2FFoKy2qsDNXFmWy3RnZVXD7AigcksLK33X6BSKnpxjvzqaXPa913dh2yFdWLJQS1cjtEhC3_VrLonaEy-sJCaBdv906BQqJspt6dUyM_vZQ30JmfGLCHaTJta6n0mF-gMVlww8dFbDGHlYjo0MZGxM6RrqOZXzM2s8RB7dWMG-PLLCmbApDPfMn8xo4CwVgyscNSpi7TCH4bvtBhzbASq6y8eWDv0Ak_Ggo_tnazYlYLAxAGAdw-P3m-bJpr5eR0gf397Ywi0WYaGtINem_E5G1Sez5x0_C3cY~) is accepted by MIR.
+
 :boom: [VLT_SCAR/VLT_TT](https://arxiv.org/abs/2207.01076) is accepted by NeurIPS2022.
 
 :boom: [CNNInMo/TransInMo](https://arxiv.org/abs/2201.02526) is accepted by IJCAI2022.

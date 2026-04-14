@@ -3,7 +3,6 @@
 ### Codes and comparison of recent single/multiple object tracking and segmentation.
 
 ## News
-:boom: [OceanV2](https://links.springernature.com/f/a/EHcLRgauDUiLms89NQLgcA~~/AABE5hA~/TQzKaXuj2FFoKy2qsDNXFmWy3RnZVXD7AigcksLK33X6BSKnpxjvzqaXPa913dh2yFdWLJQS1cjtEhC3_VrLonaEy-sJCaBdv906BQqJspt6dUyM_vZQ30JmfGLCHaTJta6n0mF-gMVlww8dFbDGHlYjo0MZGxM6RrqOZXzM2s8RB7dWMG-PLLCmbApDPfMn8xo4CwVgyscNSpi7TCH4bvtBhzbASq6y8eWDv0Ak_Ggo_tnazYlYLAxAGAdw-P3m-bJpr5eR0gf397Ywi0WYaGtINem_E5G1Sez5x0_C3cY~) is accepted by MIR.
 
 :boom: [VLT_SCAR/VLT_TT](https://arxiv.org/abs/2207.01076) is accepted by NeurIPS2022.
 
@@ -17,7 +16,7 @@
 
 :boom: [CSTrack](https://arxiv.org/abs/2010.12138) ranks 5/4000 at `Tianchi Global AI Competition`.
 
-:boom: [Ocean](https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123660766.pdf) is accepted by ECCV2020. [OceanPlus] is accepted by IEEE TIP.
+:boom: [Ocean](https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123660766.pdf) is accepted by ECCV2020. [OceanPlus] is accepted by IEEE TIP. [Ocean new version](https://link.springer.com/article/10.1007/s11633-026-1634-0) is accepted by MIR.
 
 :boom: [SiamDW](http://openaccess.thecvf.com/content_CVPR_2019/papers/Zhang_Deeper_and_Wider_Siamese_Networks_for_Real-Time_Visual_Tracking_CVPR_2019_paper.pdf) is accepted by CVPR2019 and selected as oral presentation.
 
